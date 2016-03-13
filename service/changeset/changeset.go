@@ -49,7 +49,7 @@ type Changeset struct {
 
 type Changesets []*Changeset
 
-type changesetCreate struct {
+type ChangesetCreate struct {
 	Body      string     `json:"body"`
 	ChangedAt *time.Time `json:"changed_at"`
 	Changes   Changes    `json:"changes"`
@@ -129,7 +129,7 @@ func (s *Service) List() (Changesets, error) {
 	return csresp.changesets(), nil
 }
 
-func (s *Service) Initial() (*Changeset, error) {
+func (s *Service) New() (*Changeset, error) {
 	return s.Get("new")
 }
 
@@ -154,9 +154,10 @@ func (s *Service) Get(revision string) (*Changeset, error) {
 	return cresp.Changeset, nil
 }
 
-func (s *Service) New(c *Changeset) (*Changeset, error) {
+// Only the fields in ChangesetCreate can be set.
+func (s *Service) Create(c *Changeset) (*Changeset, error) {
 	creq := &changesetRequest{
-		Changeset: &changesetCreate{
+		Changeset: &ChangesetCreate{
 			Body:      c.Body,
 			ChangedAt: c.ChangedAt,
 			Changes:   c.Changes,

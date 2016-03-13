@@ -39,7 +39,7 @@ type Comment struct {
 
 type Comments []*Comment
 
-type commentCreate struct {
+type CommentCreate struct {
 	Body  string `json:"body"`
 	Title string `json:"title"`
 }
@@ -77,12 +77,12 @@ type Message struct {
 
 type Messages []*Message
 
-type messageCreate struct {
+type MessageCreate struct {
 	Body  string `json:"body"`
 	Title string `json:"title"`
 }
 
-type messageUpdate struct {
+type MessageUpdate struct {
 	Body  string `json:"body"`
 	Title string `json:"title"`
 }
@@ -162,9 +162,10 @@ func (s *Service) New() (*Message, error) {
 	return s.get("new")
 }
 
+// Only the fields in MessageUpdate can be set.
 func (s *Service) Update(m *Message) error {
 	mreq := &messageRequest{
-		Message: &messageUpdate{
+		Message: &MessageUpdate{
 			Body:  m.Body,
 			Title: m.Title,
 		},
@@ -215,9 +216,10 @@ func (s *Service) get(id string) (*Message, error) {
 	return mresp.Message, nil
 }
 
+// Only the fields in MessageCreate can be set.
 func (s *Service) Create(m *Message) (*Message, error) {
 	mreq := &messageRequest{
-		Message: &messageCreate{
+		Message: &MessageCreate{
 			Body:  m.Body,
 			Title: m.Title,
 		},
@@ -251,9 +253,10 @@ func (s *Service) Create(m *Message) (*Message, error) {
 	return m, nil
 }
 
+// Only the fields in CommentCreate can be set.
 func (s *Service) CreateComment(id int, c *Comment) (*Message, error) {
 	creq := &commentRequest{
-		Comment: &commentCreate{
+		Comment: &CommentCreate{
 			Body:  c.Body,
 			Title: c.Title,
 		},

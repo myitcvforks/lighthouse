@@ -136,7 +136,7 @@ type User struct {
 	ActiveTickets ActiveTickets `json:"active_tickets"`
 }
 
-type userUpdate struct {
+type UserUpdate struct {
 	ID      int    `json:"id"`
 	Job     string `json:"job"`
 	Name    string `json:"name"`
@@ -187,9 +187,10 @@ func (s *Service) Get(id int) (*User, error) {
 	return uresp.User, nil
 }
 
+// Only the fields in UserUpdate can be set.
 func (s *Service) Update(u *User) error {
 	ureq := &userRequest{
-		User: &userUpdate{
+		User: &UserUpdate{
 			ID:      u.ID,
 			Job:     u.Job,
 			Name:    u.Name,

@@ -125,13 +125,13 @@ type Project struct {
 
 type Projects []*Project
 
-type projectCreate struct {
+type ProjectCreate struct {
 	Archived bool   `json:"archived"`
 	Name     string `json:"name"`
 	Public   bool   `json:"public"`
 }
 
-type projectUpdate struct {
+type ProjectUpdate struct {
 	Archived bool   `json:"archived"`
 	Name     string `json:"name"`
 	Public   bool   `json:"public"`
@@ -208,7 +208,7 @@ func (s *Service) Get(id int) (*Project, error) {
 	return s.get(strconv.Itoa(id))
 }
 
-func (s *Service) Initial() (*Project, error) {
+func (s *Service) New() (*Project, error) {
 	return s.get("new")
 }
 
@@ -233,9 +233,10 @@ func (s *Service) get(id string) (*Project, error) {
 	return presp.Project, nil
 }
 
-func (s *Service) New(p *Project) (*Project, error) {
+// Only the fields in ProjectCreate can be set.
+func (s *Service) Create(p *Project) (*Project, error) {
 	preq := &projectRequest{
-		Project: &projectCreate{
+		Project: &ProjectCreate{
 			Archived: p.Archived,
 			Name:     p.Name,
 			Public:   p.Public,
@@ -270,9 +271,10 @@ func (s *Service) New(p *Project) (*Project, error) {
 	return p, nil
 }
 
+// Only the fields in ProjectUpdate can be set.
 func (s *Service) Update(p *Project) error {
 	preq := &projectRequest{
-		Project: &projectUpdate{
+		Project: &ProjectUpdate{
 			Archived: p.Archived,
 			Name:     p.Name,
 			Public:   p.Public,

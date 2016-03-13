@@ -32,13 +32,13 @@ type Bin struct {
 
 type Bins []*Bin
 
-type binCreate struct {
+type BinCreate struct {
 	Default bool   `json:"default"`
 	Name    string `json:"name"`
 	Query   string `json:"query"`
 }
 
-type binUpdate struct {
+type BinUpdate struct {
 	Default bool   `json:"default"`
 	Name    string `json:"name"`
 	Query   string `json:"query"`
@@ -136,9 +136,10 @@ func (s *Service) Get(id int) (*Bin, error) {
 	return bresp.Bin, nil
 }
 
+// Only the fields in BinCreate can be set.
 func (s *Service) Create(b *Bin) (*Bin, error) {
 	breq := &binRequest{
-		Bin: &binCreate{
+		Bin: &BinCreate{
 			Default: b.Default,
 			Name:    b.Name,
 			Query:   b.Query,
@@ -173,9 +174,10 @@ func (s *Service) Create(b *Bin) (*Bin, error) {
 	return b, nil
 }
 
+// Only the fields in BinUpdate can be set.
 func (s *Service) Update(b *Bin) error {
 	breq := &binRequest{
-		Bin: &binUpdate{
+		Bin: &BinUpdate{
 			Default: b.Default,
 			Name:    b.Name,
 			Query:   b.Query,

@@ -204,7 +204,7 @@ type Ticket struct {
 
 type Tickets []*Ticket
 
-type ticketCreate struct {
+type TicketCreate struct {
 	Title          string `json:"title"`
 	Body           string `json:"body"`
 	State          string `json:"state,omitempty"`
@@ -218,7 +218,7 @@ type ticketCreate struct {
 	MultipleWatchers []int `json:"multiple_watchers,omitempty"`
 }
 
-type ticketUpdate struct {
+type TicketUpdate struct {
 	Title          string `json:"title"`
 	Body           string `json:"body"`
 	State          string `json:"state,omitempty"`
@@ -327,9 +327,10 @@ func (s *Service) List(opts *ListOptions) (Tickets, error) {
 	return tsresp.tickets(), nil
 }
 
+// Only the fields in TicketUpdate can be set.
 func (s *Service) Update(t *Ticket) error {
 	treq := &ticketRequest{
-		Ticket: &ticketUpdate{
+		Ticket: &TicketUpdate{
 			Title:          t.Title,
 			Body:           t.Body,
 			State:          t.State,
@@ -388,9 +389,10 @@ func (s *Service) get(number string) (*Ticket, error) {
 	return tresp.Ticket, nil
 }
 
+// Only the fields in TicketCreate can be set.
 func (s *Service) Create(m *Ticket) (*Ticket, error) {
 	treq := &ticketRequest{
-		Ticket: &ticketCreate{
+		Ticket: &TicketCreate{
 			Title:          m.Title,
 			Body:           m.Body,
 			State:          m.State,
@@ -481,7 +483,7 @@ func (s *Service) AddAttachment(t *Ticket, filename string, r io.Reader) error {
 	}
 
 	treq := &ticketRequest{
-		Ticket: &ticketUpdate{
+		Ticket: &TicketUpdate{
 			Title:          t.Title,
 			Body:           t.Body,
 			State:          t.State,

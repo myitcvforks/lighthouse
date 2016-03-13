@@ -41,13 +41,13 @@ type Milestone struct {
 
 type Milestones []*Milestone
 
-type milestoneCreate struct {
+type MilestoneCreate struct {
 	Goals string     `json:"goals"`
 	Title string     `json:"title"`
 	DueOn *time.Time `json:"due_on"`
 }
 
-type milestoneUpdate struct {
+type MilestoneUpdate struct {
 	Goals string     `json:"goals"`
 	Title string     `json:"title"`
 	DueOn *time.Time `json:"due_on"`
@@ -146,9 +146,10 @@ func (s *Service) New() (*Milestone, error) {
 	return s.get("new")
 }
 
+// Only the fields in MilestoneUpdate can be set.
 func (s *Service) Update(m *Milestone) error {
 	mreq := &milestoneRequest{
-		Milestone: &milestoneUpdate{
+		Milestone: &MilestoneUpdate{
 			Goals: m.Goals,
 			Title: m.Title,
 			DueOn: m.DueOn,
@@ -200,9 +201,10 @@ func (s *Service) get(id string) (*Milestone, error) {
 	return mresp.Milestone, nil
 }
 
+// Only the fields in MilestoneCreate can be set.
 func (s *Service) Create(m *Milestone) (*Milestone, error) {
 	mreq := &milestoneRequest{
-		Milestone: &milestoneCreate{
+		Milestone: &MilestoneCreate{
 			Goals: m.Goals,
 			Title: m.Title,
 			DueOn: m.DueOn,
