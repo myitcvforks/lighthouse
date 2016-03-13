@@ -15,29 +15,33 @@ go get -u github.com/nwidger/lighthouse
 ## Usage
 
 ``` go
-// create a Lighthouse service instance by passing in your account
+import "github.com/nwidger/lighthouse"
+
+// Create a Lighthouse service instance by passing in your account
 // name and an API token.
 s, err := lighthouse.NewService("your-account-name", "your-api-token", nil)
 if err != nil {
 	log.Fatal(err)
 }
 
-// OR create a Lighthouse service instance with
+// Or create a Lighthouse service instance with
 // your Lighthouse username/password.
 s, err := lighthouse.NewBasicAuthService("your-account-name", "your-username", "your-password", nil)
 if err != nil {
 	log.Fatal(err)
 }
 
-// OR create a Lighthouse service instance for interacting
+// Or create a Lighthouse service instance for interacting
 // with public Lighthouse projects.
 s, err := lighthouse.NewPublicService("public-account-name", nil)
 if err != nil {
 	log.Fatal(err)
 }
 
-// use Lighthouse service instance to create service for interacting
-// with a specific resource type
+// Use Lighthouse service instance to create a service for interacting
+// with a specific resource type.
+
+// These resources are project specific.
 projectID := 123456
 
 // http://help.lighthouseapp.com/kb/api/ticket-bins
@@ -58,14 +62,16 @@ projectService, err := s.ProjectService(s)
 // http://help.lighthouseapp.com/kb/api/tickets
 ticketService, err := s.TicketService(s, projectID)
 
+// These resources are not project specific.
+
 // http://help.lighthouseapp.com/kb/api/users-and-membership
 profileService, err := s.ProfileService(s)
 tokenService, err := s.TokenService(s)
 userService, err := s.UserService(s)
 
-// call List(), Get(), New(), Update(), Delete(), etc. methods on
-// service.
-
-// See GoDoc for more details on methods available for each resource
-//type.
+// Call List(), Get(), New(), Create(), Update(), Delete(),
+// etc. methods on service.
 ```
+
+See [GoDoc reference](https://godoc.org/github.com/nwidger/lighthouse)
+for more details on each service type.
