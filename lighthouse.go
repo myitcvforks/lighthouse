@@ -41,15 +41,15 @@ func ChangesetService(s *service.Service, projectID int) (*changeset.Service, er
 	}, nil
 }
 
-func MilestoneService(s *service.Service, projectID int) (*milestone.Service, error) {
-	return &milestone.Service{
+func MessageService(s *service.Service, projectID int) (*message.Service, error) {
+	return &message.Service{
 		ProjectID: projectID,
 		Service:   s,
 	}, nil
 }
 
-func MessageService(s *service.Service, projectID int) (*message.Service, error) {
-	return &message.Service{
+func MilestoneService(s *service.Service, projectID int) (*milestone.Service, error) {
+	return &milestone.Service{
 		ProjectID: projectID,
 		Service:   s,
 	}, nil
