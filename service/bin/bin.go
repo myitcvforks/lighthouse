@@ -57,11 +57,6 @@ type binResponse struct {
 	Bin *Bin `json:"ticket_bin"`
 }
 
-func (br *binResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(br)
-}
-
 func (tr *binResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(tr)
@@ -69,11 +64,6 @@ func (tr *binResponse) decode(r io.Reader) error {
 
 type binsResponse struct {
 	Bins []*binResponse `json:"ticket_bins"`
-}
-
-func (bsr *binsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(bsr)
 }
 
 func (bsr *binsResponse) decode(r io.Reader) error {

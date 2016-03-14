@@ -100,11 +100,6 @@ type messageResponse struct {
 	Message *Message `json:"message"`
 }
 
-func (mr *messageResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(mr)
-}
-
 func (mr *messageResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(mr)
@@ -112,11 +107,6 @@ func (mr *messageResponse) decode(r io.Reader) error {
 
 type messagesResponse struct {
 	Messages []*messageResponse `json:"messages"`
-}
-
-func (msr *messagesResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(msr)
 }
 
 func (msr *messagesResponse) decode(r io.Reader) error {

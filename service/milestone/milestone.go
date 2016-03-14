@@ -66,11 +66,6 @@ type milestoneResponse struct {
 	Milestone *Milestone `json:"milestone"`
 }
 
-func (mr *milestoneResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(mr)
-}
-
 func (mr *milestoneResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(mr)
@@ -78,11 +73,6 @@ func (mr *milestoneResponse) decode(r io.Reader) error {
 
 type milestonesResponse struct {
 	Milestones []*milestoneResponse `json:"milestones"`
-}
-
-func (msr *milestonesResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(msr)
 }
 
 func (msr *milestonesResponse) decode(r io.Reader) error {

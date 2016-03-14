@@ -61,15 +61,6 @@ type AttachmentsResponse struct {
 	Attachments []*AttachmentResponse `json:"attachments"`
 }
 
-func (asr *AttachmentsResponse) attachments() Attachments {
-	as := make(Attachments, 0, len(asr.Attachments))
-	for _, a := range asr.Attachments {
-		as = append(as, a.Attachment)
-	}
-
-	return as
-}
-
 type AlphabeticalTag struct {
 	Tag   string
 	Count int
@@ -247,11 +238,6 @@ type ticketResponse struct {
 	Ticket *Ticket `json:"ticket"`
 }
 
-func (mr *ticketResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(mr)
-}
-
 func (mr *ticketResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(mr)
@@ -259,11 +245,6 @@ func (mr *ticketResponse) decode(r io.Reader) error {
 
 type ticketsResponse struct {
 	Tickets []*ticketResponse `json:"tickets"`
-}
-
-func (msr *ticketsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(msr)
 }
 
 func (msr *ticketsResponse) decode(r io.Reader) error {

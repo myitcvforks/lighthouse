@@ -26,11 +26,6 @@ type tokenResponse struct {
 	Token *Token `json:"token"`
 }
 
-func (pr *tokenResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(pr)
-}
-
 func (pr *tokenResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(pr)
