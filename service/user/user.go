@@ -34,14 +34,18 @@ func (at *ActiveTicket) MarshalJSON() ([]byte, error) {
 }
 
 func (at *ActiveTicket) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
+	if at == nil {
+		at = &ActiveTicket{}
+	}
+
 	at.Number = 0
 	at.Title = ""
 	at.URL = ""
 	at.UpdatedAt = time.Time{}
-
-	if data == nil {
-		return nil
-	}
 
 	arr := []interface{}{}
 	err := json.Unmarshal(data, &arr)

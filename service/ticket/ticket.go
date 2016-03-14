@@ -86,12 +86,16 @@ func (at *AlphabeticalTag) MarshalJSON() ([]byte, error) {
 }
 
 func (at *AlphabeticalTag) UnmarshalJSON(data []byte) error {
-	at.Tag = ""
-	at.Count = 0
-
 	if data == nil {
 		return nil
 	}
+
+	if at == nil {
+		at = &AlphabeticalTag{}
+	}
+
+	at.Tag = ""
+	at.Count = 0
 
 	arr := []interface{}{}
 	err := json.Unmarshal(data, &arr)

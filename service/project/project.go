@@ -25,9 +25,13 @@ type Todos struct {
 
 type CommaList []string
 
-func (t *CommaList) UnmarshalJSON(buf []byte) error {
+func (t *CommaList) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
 	s := ""
-	if err := json.Unmarshal(buf, &s); err != nil {
+	if err := json.Unmarshal(data, &s); err != nil {
 		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", buf, err)
 	}
 
