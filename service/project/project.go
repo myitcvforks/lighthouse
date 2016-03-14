@@ -32,7 +32,7 @@ func (t *CommaList) UnmarshalJSON(data []byte) error {
 
 	s := ""
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", buf, err)
+		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", data, err)
 	}
 
 	*t = strings.FieldsFunc(s, func(r rune) bool {
