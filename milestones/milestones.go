@@ -112,7 +112,7 @@ func (s *Service) List(opts *ListOptions) (Milestones, error) {
 			values.Set("page", strconv.Itoa(opts.Page))
 		}
 		u.RawQuery = values.Encode()
-		path = u.RequestURI()
+		path = u.String()
 	}
 
 	resp, err := s.s.RoundTrip("GET", path, nil)
