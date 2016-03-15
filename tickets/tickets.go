@@ -1,4 +1,4 @@
-package ticket
+package tickets
 
 import (
 	"bytes"
@@ -13,12 +13,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	ProjectID int
-	Service   *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
+	return &Service{
+		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/tickets",
+		s:        s,
+	}, nil
 }
 
 type Tag struct {
@@ -276,10 +283,6 @@ func (msr *ticketsResponse) tickets() Tickets {
 	return ms
 }
 
-func (s *Service) basePath() string {
-	return "/projects/" + strconv.Itoa(s.ProjectID)
-}
-
 type ListOptions struct {
 	Query string
 	Limit int
@@ -287,7 +290,7 @@ type ListOptions struct {
 }
 
 func (s *Service) List(opts *ListOptions) (Tickets, error) {
-	path := s.basePath() + "/tickets.json"
+	path := s.basePath + ".json"
 	if opts != nil {
 		u, err := url.Parse(path)
 		if err != nil {
@@ -307,13 +310,13 @@ func (s *Service) List(opts *ListOptions) (Tickets, error) {
 		path = u.RequestURI()
 	}
 
-	resp, err := s.Service.RoundTrip("GET", path, nil)
+	resp, err := s.s.RoundTrip("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -346,13 +349,13 @@ func (s *Service) Update(t *Ticket) error {
 		return err
 	}
 
-	resp, err := s.Service.RoundTrip("PUT", s.basePath()+"/tickets/"+strconv.Itoa(t.Number)+".json", buf)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(t.Number)+".json", buf)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -369,13 +372,13 @@ func (s *Service) Get(number int) (*Ticket, error) {
 }
 
 func (s *Service) get(number string) (*Ticket, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/tickets/"+number+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+number+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -408,13 +411,13 @@ func (s *Service) Create(m *Ticket) (*Ticket, error) {
 		return nil, err
 	}
 
-	resp, err := s.Service.RoundTrip("POST", s.basePath()+"/tickets.json", buf)
+	resp, err := s.s.RoundTrip("POST", s.basePath+".json", buf)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusCreated)
+	err = lighthouse.CheckResponse(resp, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -431,13 +434,13 @@ func (s *Service) Create(m *Ticket) (*Ticket, error) {
 }
 
 func (s *Service) Delete(number int) error {
-	resp, err := s.Service.RoundTrip("DELETE", s.basePath()+"/tickets/"+strconv.Itoa(number)+".json", nil)
+	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(number)+".json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -446,13 +449,13 @@ func (s *Service) Delete(number int) error {
 }
 
 func (s *Service) GetAttachment(a *Attachment) (io.ReadCloser, error) {
-	resp, err := s.Service.RoundTrip("GET", a.URL, nil)
+	resp, err := s.s.RoundTrip("GET", a.URL, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -503,19 +506,19 @@ func (s *Service) AddAttachment(t *Ticket, filename string, r io.Reader) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", s.Service.URL+s.basePath()+"/tickets/"+strconv.Itoa(t.Number)+".json", body)
+	req, err := http.NewRequest("PUT", s.basePath+"/"+strconv.Itoa(t.Number)+".json", body)
 	if err != nil {
 		return err
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
-	resp, err := s.Service.Client.Do(req)
+	resp, err := s.s.Client.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}

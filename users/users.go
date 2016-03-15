@@ -1,4 +1,4 @@
-package user
+package users
 
 import (
 	"bytes"
@@ -9,11 +9,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	Service *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service) (*Service, error) {
+	return &Service{
+		basePath: s.BasePath + "/users",
+		s:        s,
+	}, nil
 }
 
 type ActiveTicket struct {
@@ -167,13 +175,13 @@ func (ur *userResponse) decode(r io.Reader) error {
 }
 
 func (s *Service) Get(id int) (*User, error) {
-	resp, err := s.Service.RoundTrip("GET", "/users/"+strconv.Itoa(id)+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -204,13 +212,13 @@ func (s *Service) Update(u *User) error {
 		return err
 	}
 
-	resp, err := s.Service.RoundTrip("PUT", "/users/"+strconv.Itoa(u.ID)+".json", buf)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(u.ID)+".json", buf)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -219,13 +227,13 @@ func (s *Service) Update(u *User) error {
 }
 
 func (s *Service) Memberships(id int) (Memberships, error) {
-	resp, err := s.Service.RoundTrip("GET", "/users/"+strconv.Itoa(id)+"/memberships.json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+"/memberships.json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

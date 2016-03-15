@@ -1,4 +1,4 @@
-package token
+package tokens
 
 import (
 	"encoding/json"
@@ -6,11 +6,19 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	Service *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service) (*Service, error) {
+	return &Service{
+		basePath: s.BasePath + "/tokens",
+		s:        s,
+	}, nil
 }
 
 type Token struct {
@@ -37,13 +45,13 @@ func (pr *tokenResponse) decode(r io.Reader) error {
 }
 
 func (s *Service) Get(tokenStr string) (*Token, error) {
-	resp, err := s.Service.RoundTrip("GET", "/tokens/"+tokenStr+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+tokenStr+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-package changeset
+package changesets
 
 import (
 	"bytes"
@@ -8,12 +8,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	ProjectID int
-	Service   *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
+	return &Service{
+		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/changesets",
+		s:        s,
+	}, nil
 }
 
 type Change []string
@@ -104,18 +111,14 @@ func (csr *changesetsResponse) changesets() Changesets {
 	return cs
 }
 
-func (s *Service) basePath() string {
-	return "/projects/" + strconv.Itoa(s.ProjectID)
-}
-
 func (s *Service) List() (Changesets, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/changesets.json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -134,13 +137,13 @@ func (s *Service) New() (*Changeset, error) {
 }
 
 func (s *Service) Get(revision string) (*Changeset, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/changesets/"+revision+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+revision+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -173,13 +176,13 @@ func (s *Service) Create(c *Changeset) (*Changeset, error) {
 		return nil, err
 	}
 
-	resp, err := s.Service.RoundTrip("POST", s.basePath()+"/changesets.json", buf)
+	resp, err := s.s.RoundTrip("POST", s.basePath+".json", buf)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusCreated)
+	err = lighthouse.CheckResponse(resp, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -196,13 +199,13 @@ func (s *Service) Create(c *Changeset) (*Changeset, error) {
 }
 
 func (s *Service) Delete(revision string) error {
-	resp, err := s.Service.RoundTrip("DELETE", s.basePath()+"/changesets/"+revision+".json", nil)
+	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+revision+".json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}

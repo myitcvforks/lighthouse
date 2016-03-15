@@ -1,87 +1,194 @@
 package lighthouse
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
-
-	"github.com/nwidger/lighthouse/service"
-	"github.com/nwidger/lighthouse/service/bin"
-	"github.com/nwidger/lighthouse/service/changeset"
-	"github.com/nwidger/lighthouse/service/message"
-	"github.com/nwidger/lighthouse/service/milestone"
-	"github.com/nwidger/lighthouse/service/profile"
-	"github.com/nwidger/lighthouse/service/project"
-	"github.com/nwidger/lighthouse/service/ticket"
-	"github.com/nwidger/lighthouse/service/token"
-	"github.com/nwidger/lighthouse/service/user"
 )
 
-func NewService(account, token string, rt http.RoundTripper) (*service.Service, error) {
-	return service.New(account, token, rt)
+const (
+	StatusUnprocessableEntity = 422
+)
+
+// Transport wraps another http.RoundTripper and ensures the outgoing
+// request is properly authenticated
+type Transport struct {
+	// API token to use for authentication.  If set this is used
+	// instead of Username/Password.
+	Token string
+	// If Token is set and TokenAsParameter is true, send API
+	// token in '_token' URL parameter.
+	TokenAsParameter bool
+
+	// Username and password to use for authentication.
+	Username, Password string
+
+	// Base specifies the mechanism by which individual HTTP
+	// requests are made.  If Base is nil, http.DefaultTransport
+	// is used.
+	Base http.RoundTripper
 }
 
-func NewPublicService(account string, rt http.RoundTripper) (*service.Service, error) {
-	return service.NewPublic(account, rt)
+func (t *Transport) base() http.RoundTripper {
+	if t.Base != nil {
+		return t.Base
+	}
+	return http.DefaultTransport
 }
 
-func NewBasicAuthService(account, username, password string, rt http.RoundTripper) (*service.Service, error) {
-	return service.NewBasicAuth(account, username, password, rt)
+func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	if len(t.Token) > 0 {
+		if t.TokenAsParameter {
+			values := req.URL.Query()
+			values.Set("_token", t.Token)
+			req.URL.RawQuery = values.Encode()
+		} else {
+			req.Header.Set("X-LighthouseToken", t.Token)
+		}
+	} else if len(t.Username) > 0 && len(t.Password) > 0 {
+		req.SetBasicAuth(t.Username, t.Password)
+	}
+
+	return t.base().RoundTrip(req)
 }
 
-func BinService(s *service.Service, projectID int) (*bin.Service, error) {
-	return &bin.Service{
-		ProjectID: projectID,
-		Service:   s,
+func NewClient(token string) *http.Client {
+	return &http.Client{
+		Transport: &Transport{
+			Token: token,
+		},
+	}
+}
+
+func NewClientBasicAuth(email, password string) *http.Client {
+	return &http.Client{
+		Transport: &Transport{
+			Username: email,
+			Password: password,
+		},
+	}
+}
+
+type Service struct {
+	BasePath string
+	Client   *http.Client
+}
+
+func BasePath(account string) string {
+	return fmt.Sprintf("https://%s.lighthouseapp.com", account)
+}
+
+func NewService(account string, client *http.Client) (*Service, error) {
+	return &Service{
+		BasePath: BasePath(account),
+		Client:   client,
 	}, nil
 }
 
-func ChangesetService(s *service.Service, projectID int) (*changeset.Service, error) {
-	return &changeset.Service{
-		ProjectID: projectID,
-		Service:   s,
-	}, nil
+func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequest(method, path, body)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := s.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
-func MessageService(s *service.Service, projectID int) (*message.Service, error) {
-	return &message.Service{
-		ProjectID: projectID,
-		Service:   s,
-	}, nil
+type ErrUnprocessable []string
+
+func (ve ErrUnprocessable) Field() string {
+	if len(ve) != 2 {
+		return ""
+	}
+	return ve[0]
 }
 
-func MilestoneService(s *service.Service, projectID int) (*milestone.Service, error) {
-	return &milestone.Service{
-		ProjectID: projectID,
-		Service:   s,
-	}, nil
+func (ve ErrUnprocessable) Message() string {
+	if len(ve) != 2 {
+		return ""
+	}
+	return ve[1]
 }
 
-func ProfileService(s *service.Service) (*profile.Service, error) {
-	return &profile.Service{
-		Service: s,
-	}, nil
+func (ve ErrUnprocessable) Error() string {
+	return fmt.Sprintf("%s: %s", ve.Field(), ve.Message())
 }
 
-func ProjectService(s *service.Service) (*project.Service, error) {
-	return &project.Service{
-		Service: s,
-	}, nil
+type ErrUnprocessables []ErrUnprocessable
+
+func (ves ErrUnprocessables) Error() string {
+	msg := ""
+	for i, ve := range ves {
+		if i > 0 {
+			msg += ", "
+		}
+		msg += ve.Error()
+	}
+	return msg
 }
 
-func TicketService(s *service.Service, projectID int) (*ticket.Service, error) {
-	return &ticket.Service{
-		ProjectID: projectID,
-		Service:   s,
-	}, nil
+type ErrInvalidResponse struct {
+	// The expected StatusCode
+	ExpectedCode int
+
+	// Resp.Body will always be closed.
+	Resp *http.Response
+
+	// BodyContents will contain the contents of Resp.Body if
+	// Unprocessables is nil.
+	BodyContents []byte
+
+	// Unprocessables will not be nil if Resp.StatusCode was 422
+	// StatusUnprocessableEntity.
+	Unprocessables ErrUnprocessables
 }
 
-func TokenService(s *service.Service) (*token.Service, error) {
-	return &token.Service{
-		Service: s,
-	}, nil
+func newErrInvalidResponse(resp *http.Response) error {
+	var err error
+
+	defer resp.Body.Close()
+
+	eir := &ErrInvalidResponse{
+		Resp: resp,
+	}
+
+	if resp.StatusCode != StatusUnprocessableEntity {
+		eir.BodyContents, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+	} else {
+		dec := json.NewDecoder(resp.Body)
+		eir.Unprocessables = ErrUnprocessables{}
+
+		err = dec.Decode(&eir.Unprocessables)
+		if err != nil {
+			return err
+		}
+	}
+
+	return eir
 }
 
-func UserService(s *service.Service) (*user.Service, error) {
-	return &user.Service{
-		Service: s,
-	}, nil
+func (eir *ErrInvalidResponse) Error() string {
+	if eir.Unprocessables != nil {
+		return eir.Unprocessables.Error()
+	}
+
+	return fmt.Sprintf("expected %d %s response, received %s",
+		eir.ExpectedCode, http.StatusText(eir.ExpectedCode), eir.Resp.Status)
+}
+
+func CheckResponse(resp *http.Response, expected int) error {
+	if resp.StatusCode != expected {
+		return newErrInvalidResponse(resp)
+	}
+	return nil
 }

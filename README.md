@@ -17,57 +17,51 @@ go get -u github.com/nwidger/lighthouse
 ``` go
 import "github.com/nwidger/lighthouse"
 
-// Create a Lighthouse service instance by passing in your account
-// name and an API token.
-s, err := lighthouse.NewService("your-account-name", "your-api-token", nil)
+// Create an *http.Client which will authenticate with your Lighthouse
+// API token.
+client := lighthouse.NewClient("your-api-token")
+
+// Or create an *http.Client which will authenticate with your
+// Lighthouse email/password.
+client := lighthouse.NewClientBasicAuth("your-email", "your-password")
+
+// Create a *lighthouse.Service with your Lighthouse account and client.
+// 'https://your-account-name.lighthouseapp.com'.
+s, err := lighthouse.NewService("your-account-name", client)
 if err != nil {
 	log.Fatal(err)
 }
 
-// Or create a Lighthouse service instance with
-// your Lighthouse username/password.
-s, err := lighthouse.NewBasicAuthService("your-account-name", "your-username", "your-password", nil)
-if err != nil {
-	log.Fatal(err)
-}
-
-// Or create a Lighthouse service instance for interacting
-// with public Lighthouse projects.
-s, err := lighthouse.NewPublicService("public-account-name", nil)
-if err != nil {
-	log.Fatal(err)
-}
-
-// Use Lighthouse service instance to create a service for interacting
-// with a specific resource type.
+// Create a service for interacting with each resource type in your
+// account.
 
 // These resources are project specific.
 projectID := 123456
 
 // http://help.lighthouseapp.com/kb/api/ticket-bins
-binService, err := s.BinService(s, projectID)
+binsService, err := bin.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/changesets
-changesetService, err := s.ChangesetService(s, projectID)
+changesetService, err := changesets.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/messages
-messageService, err := s.MessageService(s, projectID)
+messagesService, err := messages.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/milestones
-milestoneService, err := s.MilestoneService(s, projectID)
+milestonesService, err := milestones.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/projects
-projectService, err := s.ProjectService(s)
+projectsService, err := projects.NewService(s)
 
 // http://help.lighthouseapp.com/kb/api/tickets
-ticketService, err := s.TicketService(s, projectID)
+ticketsService, err := tickets.NewService(s, projectID)
 
 // These resources are not project specific.
 
 // http://help.lighthouseapp.com/kb/api/users-and-membership
-profileService, err := s.ProfileService(s)
-tokenService, err := s.TokenService(s)
-userService, err := s.UserService(s)
+profilesService, err := profiles.NewService(s)
+tokensService, err := tokens.NewService(s)
+usersService, err := users.NewService(s)
 
 // Call List(), Get(), New(), Create(), Update(), Delete(),
 // etc. methods on service.

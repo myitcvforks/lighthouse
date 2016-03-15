@@ -1,4 +1,4 @@
-package milestone
+package milestones
 
 import (
 	"bytes"
@@ -9,12 +9,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	ProjectID int
-	Service   *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
+	return &Service{
+		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/milestones",
+		s:        s,
+	}, nil
 }
 
 type Milestone struct {
@@ -99,16 +106,12 @@ func (msr *milestonesResponse) milestones() Milestones {
 	return ms
 }
 
-func (s *Service) basePath() string {
-	return "/projects/" + strconv.Itoa(s.ProjectID)
-}
-
 type ListOptions struct {
 	Page int
 }
 
 func (s *Service) List(opts *ListOptions) (Milestones, error) {
-	path := s.basePath() + "/milestones.json"
+	path := s.basePath + ".json"
 	if opts != nil {
 		u, err := url.Parse(path)
 		if err != nil {
@@ -122,13 +125,13 @@ func (s *Service) List(opts *ListOptions) (Milestones, error) {
 		path = u.RequestURI()
 	}
 
-	resp, err := s.Service.RoundTrip("GET", path, nil)
+	resp, err := s.s.RoundTrip("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -162,13 +165,13 @@ func (s *Service) Update(m *Milestone) error {
 		return err
 	}
 
-	resp, err := s.Service.RoundTrip("PUT", s.basePath()+"/milestones/"+strconv.Itoa(m.ID)+".json", buf)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(m.ID)+".json", buf)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -181,13 +184,13 @@ func (s *Service) Get(id int) (*Milestone, error) {
 }
 
 func (s *Service) get(id string) (*Milestone, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/milestones/"+id+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+id+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -217,13 +220,13 @@ func (s *Service) Create(m *Milestone) (*Milestone, error) {
 		return nil, err
 	}
 
-	resp, err := s.Service.RoundTrip("POST", s.basePath()+"/milestones.json", buf)
+	resp, err := s.s.RoundTrip("POST", s.basePath+".json", buf)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusCreated)
+	err = lighthouse.CheckResponse(resp, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -241,13 +244,13 @@ func (s *Service) Create(m *Milestone) (*Milestone, error) {
 
 // Must use basic auth, API token not allowed for this action
 func (s *Service) Close(id int) error {
-	resp, err := s.Service.RoundTrip("PUT", s.basePath()+"/milestones/"+strconv.Itoa(id)+"/close.json", nil)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/close.json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -257,13 +260,13 @@ func (s *Service) Close(id int) error {
 
 // Must use basic auth, API token not allowed for this action
 func (s *Service) Open(id int) error {
-	resp, err := s.Service.RoundTrip("PUT", s.basePath()+"/milestones/"+strconv.Itoa(id)+"/open.json", nil)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/open.json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -272,13 +275,13 @@ func (s *Service) Open(id int) error {
 }
 
 func (s *Service) Delete(id int) error {
-	resp, err := s.Service.RoundTrip("DELETE", s.basePath()+"/milestones/"+strconv.Itoa(id)+".json", nil)
+	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}

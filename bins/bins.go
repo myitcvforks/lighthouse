@@ -1,4 +1,4 @@
-package bin
+package bins
 
 import (
 	"bytes"
@@ -8,12 +8,19 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/nwidger/lighthouse/service"
+	"github.com/nwidger/lighthouse"
 )
 
 type Service struct {
-	ProjectID int
-	Service   *service.Service
+	basePath string
+	s        *lighthouse.Service
+}
+
+func NewService(s *lighthouse.Service, projectID int) *Service {
+	return &Service{
+		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/bins",
+		s:        s,
+	}
 }
 
 type Bin struct {
@@ -90,18 +97,14 @@ func (bsr *binsResponse) bins() Bins {
 	return bs
 }
 
-func (s *Service) basePath() string {
-	return "/projects/" + strconv.Itoa(s.ProjectID)
-}
-
 func (s *Service) List() (Bins, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/bins.json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -116,13 +119,13 @@ func (s *Service) List() (Bins, error) {
 }
 
 func (s *Service) Get(id int) (*Bin, error) {
-	resp, err := s.Service.RoundTrip("GET", s.basePath()+"/bins/"+strconv.Itoa(id)+".json", nil)
+	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return nil, err
 	}
@@ -152,13 +155,13 @@ func (s *Service) Create(b *Bin) (*Bin, error) {
 		return nil, err
 	}
 
-	resp, err := s.Service.RoundTrip("POST", s.basePath()+"/bins.json", buf)
+	resp, err := s.s.RoundTrip("POST", s.basePath+".json", buf)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusCreated)
+	err = lighthouse.CheckResponse(resp, http.StatusCreated)
 	if err != nil {
 		return nil, err
 	}
@@ -190,13 +193,13 @@ func (s *Service) Update(b *Bin) error {
 		return err
 	}
 
-	resp, err := s.Service.RoundTrip("PUT", s.basePath()+"/bins/"+strconv.Itoa(b.ID)+".json", buf)
+	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(b.ID)+".json", buf)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
@@ -205,13 +208,13 @@ func (s *Service) Update(b *Bin) error {
 }
 
 func (s *Service) Delete(id int) error {
-	resp, err := s.Service.RoundTrip("DELETE", s.basePath()+"/bins/"+strconv.Itoa(id)+".json", nil)
+	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	err = service.CheckResponse(resp, http.StatusOK)
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {
 		return err
 	}
