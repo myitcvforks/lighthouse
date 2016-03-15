@@ -39,7 +39,7 @@ if err != nil {
 projectID := 123456
 
 // http://help.lighthouseapp.com/kb/api/ticket-bins
-binsService, err := bin.NewService(s, projectID)
+binsService, err := bins.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/changesets
 changesetService, err := changesets.NewService(s, projectID)
