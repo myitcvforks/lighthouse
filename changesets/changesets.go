@@ -78,11 +78,6 @@ type changesetResponse struct {
 	Changeset *Changeset `json:"changeset"`
 }
 
-func (cr *changesetResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(cr)
-}
-
 func (cr *changesetResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(cr)
@@ -90,11 +85,6 @@ func (cr *changesetResponse) decode(r io.Reader) error {
 
 type changesetsResponse struct {
 	ChangesetResponse []*changesetResponse `json:"changesets"`
-}
-
-func (csr *changesetsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(csr)
 }
 
 func (csr *changesetsResponse) decode(r io.Reader) error {

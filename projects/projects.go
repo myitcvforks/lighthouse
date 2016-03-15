@@ -33,10 +33,14 @@ type Todos struct {
 
 type CommaList []string
 
-func (t *CommaList) UnmarshalJSON(buf []byte) error {
+func (t *CommaList) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
 	s := ""
-	if err := json.Unmarshal(buf, &s); err != nil {
-		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", buf, err)
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", data, err)
 	}
 
 	*t = strings.FieldsFunc(s, func(r rune) bool {
@@ -71,23 +75,8 @@ type membershipResponse struct {
 	Membership *Membership `json:"membership"`
 }
 
-func (pr *membershipResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(pr)
-}
-
-func (pr *membershipResponse) decode(r io.Reader) error {
-	dec := json.NewDecoder(r)
-	return dec.Decode(pr)
-}
-
 type membershipsResponse struct {
 	Memberships []*membershipResponse `json:"memberships"`
-}
-
-func (psr *membershipsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(psr)
 }
 
 func (psr *membershipsResponse) decode(r io.Reader) error {
@@ -158,11 +147,6 @@ type projectResponse struct {
 	Project *Project `json:"project"`
 }
 
-func (pr *projectResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(pr)
-}
-
 func (pr *projectResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(pr)
@@ -170,11 +154,6 @@ func (pr *projectResponse) decode(r io.Reader) error {
 
 type projectsResponse struct {
 	Projects []*projectResponse `json:"projects"`
-}
-
-func (psr *projectsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(psr)
 }
 
 func (psr *projectsResponse) decode(r io.Reader) error {

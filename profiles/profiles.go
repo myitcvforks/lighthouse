@@ -31,11 +31,6 @@ type userResponse struct {
 	User *User `json:"user"`
 }
 
-func (ur *userResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(ur)
-}
-
 func (ur *userResponse) decode(r io.Reader) error {
 	dec := json.NewDecoder(r)
 	return dec.Decode(ur)

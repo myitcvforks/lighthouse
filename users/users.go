@@ -42,14 +42,18 @@ func (at *ActiveTicket) MarshalJSON() ([]byte, error) {
 }
 
 func (at *ActiveTicket) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
+	if at == nil {
+		at = &ActiveTicket{}
+	}
+
 	at.Number = 0
 	at.Title = ""
 	at.URL = ""
 	at.UpdatedAt = time.Time{}
-
-	if data == nil {
-		return nil
-	}
 
 	arr := []interface{}{}
 	err := json.Unmarshal(data, &arr)
@@ -103,23 +107,8 @@ type membershipResponse struct {
 	Membership *Membership `json:"membership"`
 }
 
-func (pr *membershipResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(pr)
-}
-
-func (pr *membershipResponse) decode(r io.Reader) error {
-	dec := json.NewDecoder(r)
-	return dec.Decode(pr)
-}
-
 type membershipsResponse struct {
 	Memberships []*membershipResponse `json:"memberships"`
-}
-
-func (psr *membershipsResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(psr)
 }
 
 func (psr *membershipsResponse) decode(r io.Reader) error {
@@ -162,11 +151,6 @@ func (ur *userRequest) Encode(w io.Writer) error {
 
 type userResponse struct {
 	User *User `json:"user"`
-}
-
-func (ur *userResponse) encode(w io.Writer) error {
-	enc := json.NewEncoder(w)
-	return enc.Encode(ur)
 }
 
 func (ur *userResponse) decode(r io.Reader) error {
