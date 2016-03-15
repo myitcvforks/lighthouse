@@ -31,16 +31,16 @@ type Todos struct {
 	Milestones bool `json:"milestones"`
 }
 
-type CommaList []string
+type StatesList []string
 
-func (t *CommaList) UnmarshalJSON(data []byte) error {
+func (t *StatesList) UnmarshalJSON(data []byte) error {
 	if data == nil {
 		return nil
 	}
 
 	s := ""
 	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("CommaList.UnmarshalJSON: %v: %v", data, err)
+		return fmt.Errorf("StatesList.UnmarshalJSON: %v: %v", data, err)
 	}
 
 	*t = strings.FieldsFunc(s, func(r rune) bool {
@@ -50,8 +50,9 @@ func (t *CommaList) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (t *CommaList) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + strings.Join(*t, `,`) + `"`), nil
+func (t *StatesList) MarshalJSON() ([]byte, error) {
+	s := strings.Join(*t, `,`)
+	return json.Marshal(&s)
 }
 
 type User struct {
@@ -116,8 +117,8 @@ type Project struct {
 	SendChangesetsToEvents bool       `json:"send_changesets_to_events"`
 	TodosCompleted         Todos      `json:"todos_completed"`
 	UpdatedAt              string     `json:"updated_at"`
-	OpenStatesList         CommaList  `json:"open_states_list"`
-	ClosedStatesList       CommaList  `json:"closed_states_list"`
+	OpenStatesList         StatesList `json:"open_states_list"`
+	ClosedStatesList       StatesList `json:"closed_states_list"`
 }
 
 type Projects []*Project
