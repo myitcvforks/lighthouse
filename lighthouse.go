@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path/filepath"
 )
 
 const (
@@ -91,6 +92,15 @@ func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response
 	req, err := http.NewRequest(method, path, body)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(req.Header.Get("Content-Type")) == 0 {
+		switch filepath.Ext(req.URL.Path) {
+		case ".json":
+			req.Header.Set("Content-Type", "application/json")
+		case ".xml":
+			req.Header.Set("Content-Type", "application/xml")
+		}
 	}
 
 	resp, err := s.Client.Do(req)
