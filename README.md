@@ -1,7 +1,7 @@
 Golang Lighthouse API
 =====================
 
-[![Godoc](http://img.shields.io/badge/godoc-reference-blue.svg?style=flat)](https://godoc.org/github.com/nwidger/lighthouse)
+[![GoDoc](https://godoc.org/github.com/nwidger/lighthouse?status.svg)](https://godoc.org/github.com/nwidger/lighthouse)
 
 A Golang client library for interacting with the
 [Lighthouse API](http://lighthouseapp.com/api).
