@@ -368,15 +368,15 @@ func (s *Service) get(number string) (*Ticket, error) {
 }
 
 // Only the fields in TicketCreate can be set.
-func (s *Service) Create(m *Ticket) (*Ticket, error) {
+func (s *Service) Create(t *Ticket) (*Ticket, error) {
 	treq := &ticketRequest{
 		Ticket: &TicketCreate{
-			Title:          m.Title,
-			Body:           m.Body,
-			State:          m.State,
-			AssignedUserID: m.AssignedUserID,
-			MilestoneID:    m.MilestoneID,
-			Tag:            m.Tag,
+			Title:          t.Title,
+			Body:           t.Body,
+			State:          t.State,
+			AssignedUserID: t.AssignedUserID,
+			MilestoneID:    t.MilestoneID,
+			Tag:            t.Tag,
 		},
 	}
 
@@ -398,14 +398,14 @@ func (s *Service) Create(m *Ticket) (*Ticket, error) {
 	}
 
 	tresp := &ticketResponse{
-		Ticket: m,
+		Ticket: t,
 	}
 	err = tresp.decode(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return m, nil
+	return t, nil
 }
 
 func (s *Service) Delete(number int) error {
