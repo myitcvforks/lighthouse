@@ -3,6 +3,7 @@ package changesets
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -23,20 +24,46 @@ func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
 	}, nil
 }
 
-type Change []string
-
-func (c *Change) Operation() string {
-	if len(*c) != 2 {
-		return ""
-	}
-	return (*c)[0]
+type Change struct {
+	Operation string
+	Path      string
 }
 
-func (c *Change) Path() string {
-	if len(*c) != 2 {
-		return ""
+func (c *Change) MarshalJSON() ([]byte, error) {
+	operation, path := "", ""
+	if c != nil {
+		operation, path = c.Operation, c.Path
 	}
-	return (*c)[1]
+
+	arr := []string{operation, path}
+	return json.Marshal(&arr)
+}
+
+func (c *Change) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
+	}
+
+	if c == nil {
+		c = &Change{}
+	}
+
+	c.Operation = ""
+	c.Path = ""
+
+	arr := []string{}
+	err := json.Unmarshal(data, &arr)
+	if err != nil {
+		return err
+	}
+
+	if len(arr) != 2 {
+		return fmt.Errorf("Change.UnmarshalJSON: length is %d, expected 2", len(arr))
+	}
+
+	c.Operation, c.Path = arr[0], arr[1]
+
+	return nil
 }
 
 type Changes []Change
