@@ -101,31 +101,57 @@ func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response
 	return resp, nil
 }
 
-type ErrUnprocessable []string
+type ErrUnprocessable struct {
+	Field   string
+	Message string
+}
 
-func (ve ErrUnprocessable) Field() string {
-	if len(ve) != 2 {
-		return ""
+func (eu *ErrUnprocessable) MarshalJSON() ([]byte, error) {
+	field, message := "", ""
+	if eu != nil {
+		field, message = eu.Field, eu.Message
 	}
-	return ve[0]
+
+	arr := []string{field, message}
+	return json.Marshal(&arr)
 }
 
-func (ve ErrUnprocessable) Message() string {
-	if len(ve) != 2 {
-		return ""
+func (eu *ErrUnprocessable) UnmarshalJSON(data []byte) error {
+	if data == nil {
+		return nil
 	}
-	return ve[1]
+
+	if eu == nil {
+		eu = &ErrUnprocessable{}
+	}
+
+	eu.Field = ""
+	eu.Message = ""
+
+	arr := []string{}
+	err := json.Unmarshal(data, &arr)
+	if err != nil {
+		return err
+	}
+
+	if len(arr) != 2 {
+		return fmt.Errorf("ErrUnprocessable.UnmarshalJSON: length is %d, expected 2", len(arr))
+	}
+
+	eu.Field, eu.Message = arr[0], arr[1]
+
+	return nil
 }
 
-func (ve ErrUnprocessable) Error() string {
-	return fmt.Sprintf("%s: %s", ve.Field(), ve.Message())
+func (eu *ErrUnprocessable) Error() string {
+	return fmt.Sprintf("%s: %s", eu.Field, eu.Message)
 }
 
-type ErrUnprocessables []ErrUnprocessable
+type ErrUnprocessables []*ErrUnprocessable
 
-func (ves ErrUnprocessables) Error() string {
+func (eus ErrUnprocessables) Error() string {
 	msg := ""
-	for i, ve := range ves {
+	for i, ve := range eus {
 		if i > 0 {
 			msg += ", "
 		}
