@@ -153,7 +153,7 @@ type TicketVersion struct {
 	UpdatedAt          *time.Time          `json:"updated_at"`
 	UserID             int                 `json:"user_id"`
 	Version            int                 `json:"version"`
-	WatchersIds        []int               `json:"watchers_ids"`
+	WatchersIDs        []int               `json:"watchers_ids"`
 	UserName           string              `json:"user_name"`
 	CreatorName        string              `json:"creator_name"`
 	URL                string              `json:"url"`
@@ -186,7 +186,7 @@ type Ticket struct {
 	UpdatedAt        *time.Time            `json:"updated_at"`
 	UserID           int                   `json:"user_id"`
 	Version          int                   `json:"version"`
-	WatchersIds      []int                 `json:"watchers_ids"`
+	WatchersIDs      []int                 `json:"watchers_ids"`
 	UserName         string                `json:"user_name"`
 	CreatorName      string                `json:"creator_name"`
 	AssignedUserName string                `json:"assigned_user_name"`
@@ -221,12 +221,7 @@ type TicketCreate struct {
 }
 
 type TicketUpdate struct {
-	Title          string `json:"title"`
-	Body           string `json:"body"`
-	State          string `json:"state,omitempty"`
-	AssignedUserID int    `json:"assigned_user_id"`
-	MilestoneID    int    `json:"milestone_id"`
-	Tag            string `json:"tag"`
+	*Ticket
 
 	NotifyAll        *bool `json:"notify_all,omitempty"`
 	MultipleWatchers []int `json:"multiple_watchers,omitempty"`
@@ -319,12 +314,7 @@ func (s *Service) List(opts *ListOptions) (Tickets, error) {
 func (s *Service) Update(t *Ticket) error {
 	treq := &ticketRequest{
 		Ticket: &TicketUpdate{
-			Title:          t.Title,
-			Body:           t.Body,
-			State:          t.State,
-			AssignedUserID: t.AssignedUserID,
-			MilestoneID:    t.MilestoneID,
-			Tag:            t.Tag,
+			Ticket: t,
 		},
 	}
 
@@ -472,12 +462,7 @@ func (s *Service) AddAttachment(t *Ticket, filename string, r io.Reader) error {
 
 	treq := &ticketRequest{
 		Ticket: &TicketUpdate{
-			Title:          t.Title,
-			Body:           t.Body,
-			State:          t.State,
-			AssignedUserID: t.AssignedUserID,
-			MilestoneID:    t.MilestoneID,
-			Tag:            t.Tag,
+			Ticket: t,
 		},
 	}
 
