@@ -35,7 +35,7 @@ if err != nil {
 // Create a service for interacting with each resource type in your
 // account.
 
-// These resources are project specific.
+// Some resources are project specific.
 projectID := 123456
 
 // http://help.lighthouseapp.com/kb/api/ticket-bins
@@ -55,8 +55,6 @@ projectsService, err := projects.NewService(s)
 
 // http://help.lighthouseapp.com/kb/api/tickets
 ticketsService, err := tickets.NewService(s, projectID)
-
-// These resources are not project specific.
 
 // http://help.lighthouseapp.com/kb/api/users-and-membership
 profilesService, err := profiles.NewService(s)
