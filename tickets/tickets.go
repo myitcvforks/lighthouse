@@ -28,11 +28,11 @@ type Service struct {
 	s        *lighthouse.Service
 }
 
-func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
+func NewService(s *lighthouse.Service, projectID int) *Service {
 	return &Service{
 		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/tickets",
 		s:        s,
-	}, nil
+	}
 }
 
 type Tag struct {

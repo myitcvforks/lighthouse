@@ -83,11 +83,11 @@ func BasePath(account string) string {
 	return fmt.Sprintf("https://%s.lighthouseapp.com", account)
 }
 
-func NewService(account string, client *http.Client) (*Service, error) {
+func NewService(account string, client *http.Client) *Service {
 	return &Service{
 		BasePath: BasePath(account),
 		Client:   client,
-	}, nil
+	}
 }
 
 func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response, error) {

@@ -19,11 +19,11 @@ type Service struct {
 	s        *lighthouse.Service
 }
 
-func NewService(s *lighthouse.Service) (*Service, error) {
+func NewService(s *lighthouse.Service) *Service {
 	return &Service{
 		basePath: s.BasePath + "/users",
 		s:        s,
-	}, nil
+	}
 }
 
 type ActiveTicket struct {

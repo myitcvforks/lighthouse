@@ -20,11 +20,11 @@ type Service struct {
 	s        *lighthouse.Service
 }
 
-func NewService(s *lighthouse.Service, projectID int) (*Service, error) {
+func NewService(s *lighthouse.Service, projectID int) *Service {
 	return &Service{
 		basePath: s.BasePath + "/projects/" + strconv.Itoa(projectID) + "/milestones",
 		s:        s,
-	}, nil
+	}
 }
 
 type Milestone struct {
