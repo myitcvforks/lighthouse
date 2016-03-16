@@ -69,7 +69,7 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type Changes []Change
+type Changes []*Change
 
 type Changeset struct {
 	Body      string     `json:"body"`

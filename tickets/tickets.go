@@ -127,7 +127,7 @@ func (at *AlphabeticalTag) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type AlphabeticalTags []AlphabeticalTag
+type AlphabeticalTags []*AlphabeticalTag
 
 type DiffableAttributes struct {
 	State        string `json:"state,omitempty"`

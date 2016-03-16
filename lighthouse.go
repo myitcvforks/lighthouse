@@ -188,7 +188,7 @@ func (eus ErrUnprocessables) Error() string {
 	return msg
 }
 
-type ErrInvalidResponse struct {
+type ErrUnexpectedResponse struct {
 	// The expected StatusCode
 	ExpectedCode int
 
@@ -204,34 +204,35 @@ type ErrInvalidResponse struct {
 	Unprocessables ErrUnprocessables
 }
 
-func newErrInvalidResponse(resp *http.Response) error {
+func newErrUnexpectedResponse(resp *http.Response, expected int) error {
 	var err error
 
 	defer resp.Body.Close()
 
-	eir := &ErrInvalidResponse{
-		Resp: resp,
+	eur := &ErrUnexpectedResponse{
+		ExpectedCode: expected,
+		Resp:         resp,
 	}
 
 	if resp.StatusCode != StatusUnprocessableEntity {
-		eir.BodyContents, err = ioutil.ReadAll(resp.Body)
+		eur.BodyContents, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
 		}
 	} else {
 		dec := json.NewDecoder(resp.Body)
-		eir.Unprocessables = ErrUnprocessables{}
+		eur.Unprocessables = ErrUnprocessables{}
 
-		err = dec.Decode(&eir.Unprocessables)
+		err = dec.Decode(&eur.Unprocessables)
 		if err != nil {
 			return err
 		}
 	}
 
-	return eir
+	return eur
 }
 
-func (eir *ErrInvalidResponse) Error() string {
+func (eir *ErrUnexpectedResponse) Error() string {
 	if eir.Unprocessables != nil {
 		return eir.Unprocessables.Error()
 	}
@@ -242,7 +243,7 @@ func (eir *ErrInvalidResponse) Error() string {
 
 func CheckResponse(resp *http.Response, expected int) error {
 	if resp.StatusCode != expected {
-		return newErrInvalidResponse(resp)
+		return newErrUnexpectedResponse(resp, expected)
 	}
 	return nil
 }
