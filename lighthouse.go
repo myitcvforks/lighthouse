@@ -1,3 +1,5 @@
+// Package lighthouse provides access to the Lighthouse API.
+// http://help.lighthouseapp.com/kb/api
 package lighthouse
 
 import (

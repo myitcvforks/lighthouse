@@ -1,3 +1,5 @@
+// Package tickets provides access to a project's tickets via the
+// Lighthouse API.  http://help.lighthouseapp.com/kb/api/tickets.
 package tickets
 
 import (
@@ -14,6 +16,11 @@ import (
 	"time"
 
 	"github.com/nwidger/lighthouse"
+)
+
+const (
+	DefaultLimit = 30
+	MaxLimit     = 100
 )
 
 type Service struct {
@@ -264,9 +271,17 @@ func (msr *ticketsResponse) tickets() Tickets {
 }
 
 type ListOptions struct {
+	// Search query, see
+	// http://help.lighthouseapp.com/faqs/getting-started/how-do-i-search-for-tickets.
+	// Default sort is by last update.
 	Query string
+
+	// If non-zero, the number of tickets per page to return.
+	// Default is DefaultLimit, max is MaxLimit.
 	Limit int
-	Page  int
+
+	// If non-zero, the page to return
+	Page int
 }
 
 func (s *Service) List(opts *ListOptions) (Tickets, error) {

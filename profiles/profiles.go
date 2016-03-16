@@ -1,3 +1,5 @@
+// Package profiles provides access to profiles via the Lighthouse
+// API.  http://help.lighthouseapp.com/kb/api/users-and-membership.
 package profiles
 
 import (

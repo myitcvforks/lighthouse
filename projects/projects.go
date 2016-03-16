@@ -1,3 +1,5 @@
+// Package projects provides access to projects via the Lighthouse
+// API.  http://help.lighthouseapp.com/kb/api/projects.
 package projects
 
 import (

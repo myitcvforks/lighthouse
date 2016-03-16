@@ -1,3 +1,5 @@
+// Package tokens provides access to tokens via the Lighthouse API.
+// http://help.lighthouseapp.com/kb/api/users-and-membership.
 package tokens
 
 import (

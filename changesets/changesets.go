@@ -1,3 +1,6 @@
+// Package changesets provides access to a project's changesets via
+// the Lighthouse API.
+// http://help.lighthouseapp.com/kb/api/changesets.
 package changesets
 
 import (

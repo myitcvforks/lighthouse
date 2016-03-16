@@ -1,3 +1,5 @@
+// Package messages provides access to a project's messages via the
+// Lighthouse API.  http://help.lighthouseapp.com/kb/api/messages.
 package messages
 
 import (

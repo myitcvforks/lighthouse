@@ -1,3 +1,5 @@
+// Package bins provides access to a project's ticket bins via the
+// Lighthouse API.  http://help.lighthouseapp.com/kb/api/ticket-bins.
 package bins
 
 import (

@@ -1,3 +1,6 @@
+// Package milestones provides access to a project's milestones via
+// the Lighthouse API.
+// http://help.lighthouseapp.com/kb/api/milestones.
 package milestones
 
 import (
@@ -97,6 +100,7 @@ func (msr *milestonesResponse) milestones() Milestones {
 }
 
 type ListOptions struct {
+	// If non-zero, the page to return
 	Page int
 }
 
