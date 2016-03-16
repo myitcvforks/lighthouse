@@ -42,19 +42,35 @@ func (t *Transport) base() http.RoundTripper {
 }
 
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req2 := cloneRequest(req) // per http.RoundTripper contract
+
 	if len(t.Token) > 0 {
 		if t.TokenAsParameter {
-			values := req.URL.Query()
+			values := req2.URL.Query()
 			values.Set("_token", t.Token)
-			req.URL.RawQuery = values.Encode()
+			req2.URL.RawQuery = values.Encode()
 		} else {
-			req.Header.Set("X-LighthouseToken", t.Token)
+			req2.Header.Set("X-LighthouseToken", t.Token)
 		}
 	} else if len(t.Email) > 0 && len(t.Password) > 0 {
-		req.SetBasicAuth(t.Email, t.Password)
+		req2.SetBasicAuth(t.Email, t.Password)
 	}
 
-	return t.base().RoundTrip(req)
+	return t.base().RoundTrip(req2)
+}
+
+// cloneRequest returns a clone of the provided *http.Request.
+// The clone is a shallow copy of the struct and its Header map.
+func cloneRequest(r *http.Request) *http.Request {
+	// shallow copy of the struct
+	r2 := new(http.Request)
+	*r2 = *r
+	// deep copy of the Header
+	r2.Header = make(http.Header, len(r.Header))
+	for k, s := range r.Header {
+		r2.Header[k] = append([]string(nil), s...)
+	}
+	return r2
 }
 
 func NewClient(token string) *http.Client {
