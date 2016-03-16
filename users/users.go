@@ -94,7 +94,7 @@ func (at *ActiveTicket) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type ActiveTickets []ActiveTicket
+type ActiveTickets []*ActiveTicket
 
 type Membership struct {
 	ID      int    `json:"id"`
