@@ -19,14 +19,14 @@ const (
 // request is properly authenticated
 type Transport struct {
 	// API token to use for authentication.  If set this is used
-	// instead of Username/Password.
+	// instead of Email/Password.
 	Token string
 	// If Token is set and TokenAsParameter is true, send API
 	// token in '_token' URL parameter.
 	TokenAsParameter bool
 
-	// Username and password to use for authentication.
-	Username, Password string
+	// Email and password to use for authentication.
+	Email, Password string
 
 	// Base specifies the mechanism by which individual HTTP
 	// requests are made.  If Base is nil, http.DefaultTransport
@@ -50,8 +50,8 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		} else {
 			req.Header.Set("X-LighthouseToken", t.Token)
 		}
-	} else if len(t.Username) > 0 && len(t.Password) > 0 {
-		req.SetBasicAuth(t.Username, t.Password)
+	} else if len(t.Email) > 0 && len(t.Password) > 0 {
+		req.SetBasicAuth(t.Email, t.Password)
 	}
 
 	return t.base().RoundTrip(req)
@@ -68,7 +68,7 @@ func NewClient(token string) *http.Client {
 func NewClientBasicAuth(email, password string) *http.Client {
 	return &http.Client{
 		Transport: &Transport{
-			Username: email,
+			Email:    email,
 			Password: password,
 		},
 	}
