@@ -88,6 +88,7 @@ type Changesets []*Changeset
 
 type ChangesetCreate struct {
 	Body      string     `json:"body"`
+	BodyHTML  string     `json:"body_html"`
 	ChangedAt *time.Time `json:"changed_at"`
 	Changes   Changes    `json:"changes"`
 	Revision  string     `json:"revision"`
@@ -182,6 +183,7 @@ func (s *Service) Create(c *Changeset) (*Changeset, error) {
 	creq := &changesetRequest{
 		Changeset: &ChangesetCreate{
 			Body:      c.Body,
+			BodyHTML:  c.BodyHTML,
 			ChangedAt: c.ChangedAt,
 			Changes:   c.Changes,
 			Revision:  c.Revision,
