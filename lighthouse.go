@@ -21,8 +21,13 @@ type Transport struct {
 	// API token to use for authentication.  If set this is used
 	// instead of Email/Password.
 	Token string
-	// If Token is set and TokenAsParameter is true, send API
-	// token in '_token' URL parameter.
+	// If Token is set and TokenAsBasicAuth is true, send API
+	// token in Authorization header using Basic Authentication
+	// with the API token as the username and 'x' as the password.
+	TokenAsBasicAuth bool
+	// If Token is set, TokenAsBasicAuth is false and
+	// TokenAsParameter is true, send API token in '_token' URL
+	// parameter.
 	TokenAsParameter bool
 
 	// Email and password to use for authentication.
@@ -45,7 +50,9 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req2 := cloneRequest(req) // per http.RoundTripper contract
 
 	if len(t.Token) > 0 {
-		if t.TokenAsParameter {
+		if t.TokenAsBasicAuth {
+			req2.SetBasicAuth(t.Token, "x")
+		} else if t.TokenAsParameter {
 			values := req2.URL.Query()
 			values.Set("_token", t.Token)
 			req2.URL.RawQuery = values.Encode()
