@@ -529,9 +529,9 @@ type BulkEditOptions struct {
 	MigrationToken string
 }
 
-// See
+// Undocumented, see
 // https://lighthouse.tenderapp.com/kb/ticket-workflow/how-do-i-update-tickets-with-keywords
-// and http://pastie.org/460585
+// and http://pastie.org/460585.
 func (s *Service) BulkEdit(opts *BulkEditOptions) error {
 	path := strings.TrimSuffix(s.basePath, "/tickets") + "/bulk_edit.json"
 	if opts != nil {

@@ -4,6 +4,7 @@ package lighthouse
 
 import (
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -111,6 +112,50 @@ func NewService(account string, client *http.Client) *Service {
 		BasePath: BasePath(account),
 		Client:   client,
 	}
+}
+
+type Plan struct {
+	Plan  string `xml:"plan"`
+	Free  bool   `xml:"free"`
+	Users int    `xml:"users"`
+
+	//
+	Projects int `xml:"projects"`
+	Storage  int `xml:"storage"`
+}
+
+type planResponse struct {
+	XMLName xml.Name `xml:"hash"`
+	*Plan
+}
+
+func (pr *planResponse) decode(r io.Reader) error {
+	dec := xml.NewDecoder(r)
+	return dec.Decode(pr)
+}
+
+// Get account plan details.  Undocumented, see
+// http://help.lighthouseapp.com/discussions/api-developers/1100-check-if-using-free-plan.
+func (s *Service) Plan() (*Plan, error) {
+	// using XML because JSON endpoint returns 406 Not Acceptable
+	resp, err := s.RoundTrip("GET", s.BasePath+"/plan.xml", nil)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = CheckResponse(resp, http.StatusOK)
+	if err != nil {
+		return nil, err
+	}
+
+	presp := &planResponse{}
+	err = presp.decode(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return presp.Plan, nil
 }
 
 func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response, error) {
