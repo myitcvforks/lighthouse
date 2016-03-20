@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nwidger/lighthouse"
@@ -498,6 +499,61 @@ func (s *Service) AddAttachment(t *Ticket, filename string, r io.Reader) error {
 	req.Header.Set("Content-Type", w.FormDataContentType())
 
 	resp, err := s.s.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type BulkEditOptions struct {
+	// This is any search query that is valid on the tickets
+	// page. You can also reference all tickets with 'all' or a
+	// single ticket with just the ticket's number.  See
+	// http://help.lighthouseapp.com/faqs/getting-started/how-do-i-search-for-tickets.
+	Query string
+
+	// This is a string of commands using the keywords from Query.
+	Command string
+
+	// MigrationToken is the API token of a user that has access
+	// to the project that a ticket is migrating to.  If the
+	// 'project' or 'account' keywords are not used, this is
+	// ignored.  Otherwise, MigrationToken must be set.
+	MigrationToken string
+}
+
+// See
+// https://lighthouse.tenderapp.com/kb/ticket-workflow/how-do-i-update-tickets-with-keywords
+// and http://pastie.org/460585
+func (s *Service) BulkEdit(opts *BulkEditOptions) error {
+	path := strings.TrimSuffix(s.basePath, "/tickets") + "/bulk_edit.json"
+	if opts != nil {
+		u, err := url.Parse(path)
+		if err != nil {
+			return err
+		}
+		values := &url.Values{}
+		if len(opts.Query) > 0 {
+			values.Set("query", opts.Query)
+		}
+		if len(opts.Command) > 0 {
+			values.Set("command", opts.Command)
+		}
+		if len(opts.MigrationToken) > 0 {
+			values.Set("migration_token", opts.MigrationToken)
+		}
+		u.RawQuery = values.Encode()
+		path = u.String()
+	}
+
+	resp, err := s.s.RoundTrip("POST", path, nil)
 	if err != nil {
 		return err
 	}
