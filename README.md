@@ -27,10 +27,7 @@ client := lighthouse.NewClientBasicAuth("your-email", "your-password")
 
 // Create a *lighthouse.Service with your Lighthouse account and client.
 // 'https://your-account-name.lighthouseapp.com'.
-s, err := lighthouse.NewService("your-account-name", client)
-if err != nil {
-	log.Fatal(err)
-}
+s := lighthouse.NewService("your-account-name", client)
 
 // Create a service for interacting with each resource type in your
 // account.
@@ -39,27 +36,27 @@ if err != nil {
 projectID := 123456
 
 // http://help.lighthouseapp.com/kb/api/ticket-bins
-binsService, err := bins.NewService(s, projectID)
+binsService := bins.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/changesets
-changesetService, err := changesets.NewService(s, projectID)
+changesetService := changesets.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/messages
-messagesService, err := messages.NewService(s, projectID)
+messagesService := messages.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/milestones
-milestonesService, err := milestones.NewService(s, projectID)
+milestonesService := milestones.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/projects
-projectsService, err := projects.NewService(s)
+projectsService := projects.NewService(s)
 
 // http://help.lighthouseapp.com/kb/api/tickets
-ticketsService, err := tickets.NewService(s, projectID)
+ticketsService := tickets.NewService(s, projectID)
 
 // http://help.lighthouseapp.com/kb/api/users-and-membership
-profilesService, err := profiles.NewService(s)
-tokensService, err := tokens.NewService(s)
-usersService, err := users.NewService(s)
+profilesService := profiles.NewService(s)
+tokensService := tokens.NewService(s)
+usersService := users.NewService(s)
 
 // Call List(), Get(), New(), Create(), Update(), Delete(),
 // etc. methods on service.
