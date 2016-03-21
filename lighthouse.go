@@ -115,13 +115,11 @@ func NewService(account string, client *http.Client) *Service {
 }
 
 type Plan struct {
-	Plan  string `xml:"plan"`
-	Free  bool   `xml:"free"`
-	Users int    `xml:"users"`
-
-	//
-	Projects int `xml:"projects"`
-	Storage  int `xml:"storage"`
+	Plan     string `xml:"plan"`
+	Free     bool   `xml:"free"`
+	Users    int    `xml:"users"`
+	Projects int    `xml:"projects"`
+	Storage  int    `xml:"storage"`
 }
 
 type planResponse struct {
