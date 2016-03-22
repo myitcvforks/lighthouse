@@ -236,7 +236,6 @@ func (s *Service) Create(m *Milestone) (*Milestone, error) {
 	return m, nil
 }
 
-// Must use basic auth, API token not allowed for this action
 func (s *Service) Close(id int) error {
 	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/close.json", nil)
 	if err != nil {
@@ -252,7 +251,6 @@ func (s *Service) Close(id int) error {
 	return nil
 }
 
-// Must use basic auth, API token not allowed for this action
 func (s *Service) Open(id int) error {
 	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/open.json", nil)
 	if err != nil {

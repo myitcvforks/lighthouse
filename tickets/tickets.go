@@ -271,6 +271,17 @@ func (msr *ticketsResponse) tickets() Tickets {
 	return ms
 }
 
+type bulkEditRequest struct {
+	Query          string `json:"query,omitempty"`
+	Command        string `json:"command,omitempty"`
+	MigrationToken string `json:"migration_token,omitempty"`
+}
+
+func (br *bulkEditRequest) Encode(w io.Writer) error {
+	enc := json.NewEncoder(w)
+	return enc.Encode(br)
+}
+
 type ListOptions struct {
 	// Search query, see
 	// http://help.lighthouseapp.com/faqs/getting-started/how-do-i-search-for-tickets.
@@ -533,27 +544,19 @@ type BulkEditOptions struct {
 // https://lighthouse.tenderapp.com/kb/ticket-workflow/how-do-i-update-tickets-with-keywords
 // and http://pastie.org/460585.
 func (s *Service) BulkEdit(opts *BulkEditOptions) error {
-	path := strings.TrimSuffix(s.basePath, "/tickets") + "/bulk_edit.json"
-	if opts != nil {
-		u, err := url.Parse(path)
-		if err != nil {
-			return err
-		}
-		values := &url.Values{}
-		if len(opts.Query) > 0 {
-			values.Set("query", opts.Query)
-		}
-		if len(opts.Command) > 0 {
-			values.Set("command", opts.Command)
-		}
-		if len(opts.MigrationToken) > 0 {
-			values.Set("migration_token", opts.MigrationToken)
-		}
-		u.RawQuery = values.Encode()
-		path = u.String()
+	breq := &bulkEditRequest{
+		Query:          opts.Query,
+		Command:        opts.Command,
+		MigrationToken: opts.MigrationToken,
 	}
 
-	resp, err := s.s.RoundTrip("POST", path, nil)
+	buf := &bytes.Buffer{}
+	err := breq.Encode(buf)
+	if err != nil {
+		return err
+	}
+
+	resp, err := s.s.RoundTrip("POST", strings.TrimSuffix(s.basePath, "/tickets")+"/bulk_edit.json", buf)
 	if err != nil {
 		return err
 	}
