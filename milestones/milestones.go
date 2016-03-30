@@ -104,6 +104,31 @@ type ListOptions struct {
 	Page int
 }
 
+// ListAll repeatedly calls List and returns all pages.  ListAll
+// ignores opts.Page.
+func (s *Service) ListAll(opts *ListOptions) (Milestones, error) {
+	realOpts := ListOptions{}
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	ms := Milestones{}
+
+	for realOpts.Page = 1; ; realOpts.Page++ {
+		p, err := s.List(&realOpts)
+		if err != nil {
+			return nil, err
+		}
+		if len(p) == 0 {
+			break
+		}
+
+		ms = append(ms, p...)
+	}
+
+	return ms, nil
+}
+
 func (s *Service) List(opts *ListOptions) (Milestones, error) {
 	path := s.basePath + ".json"
 	if opts != nil {

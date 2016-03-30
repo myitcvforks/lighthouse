@@ -337,6 +337,31 @@ func (s *Service) List(opts *ListOptions) (Tickets, error) {
 	return tsresp.tickets(), nil
 }
 
+// ListAll repeatedly calls List and returns all pages.  ListAll
+// ignores opts.Page.
+func (s *Service) ListAll(opts *ListOptions) (Tickets, error) {
+	realOpts := ListOptions{}
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	ts := Tickets{}
+
+	for realOpts.Page = 1; ; realOpts.Page++ {
+		p, err := s.List(&realOpts)
+		if err != nil {
+			return nil, err
+		}
+		if len(p) == 0 {
+			break
+		}
+
+		ts = append(ts, p...)
+	}
+
+	return ts, nil
+}
+
 // Only the fields in TicketUpdate can be set.
 func (s *Service) Update(t *Ticket) error {
 	treq := &ticketRequest{
