@@ -62,7 +62,7 @@ Use `lh get` to retrieve a specific Lighthouse resource (usually by
 ID):
 
 ``` shell
-$ lh get -h
+$ lh get
 Get Lighthouse resources by ID
 
 Usage:
@@ -93,6 +93,7 @@ Use "lh get [command] --help" for more information about a command.
 Use `lh list` to list Lighthouse resources:
 
 ``` shell
+$ lh list
 List Lighthouse resources
 
 Usage:
