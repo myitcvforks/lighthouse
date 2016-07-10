@@ -150,7 +150,7 @@ $ lh get ticket 2428
 List all tickets matching query `milestone:"XYZ v9"`
 
 ``` shell
-$ lh list tickets --all --query 'milestone:"XYZ v9"`
+$ lh list tickets --all --query 'milestone:"XYZ v9"'
 ```
 
 List account memberships for user `999999`:
