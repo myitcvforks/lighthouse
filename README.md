@@ -6,6 +6,9 @@ Golang Lighthouse API
 A Golang client library for interacting with the
 [Lighthouse API](http://lighthouseapp.com/api).
 
+See [cmd/lh](https://github.com/nwidger/lighthouse/blob/master/cmd/lh)
+for a Lighthouse CLI client based on this library.
+
 ## Installation
 
 ```
