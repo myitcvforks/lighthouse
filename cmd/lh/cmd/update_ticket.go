@@ -41,14 +41,16 @@ var updateTicketCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		f, err := os.Open(updateTicketsCmdFlags.attachment)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer f.Close()
-		err = t.AddAttachment(tkt, filepath.Base(updateTicketsCmdFlags.attachment), f)
-		if err != nil {
-			log.Fatal(err)
+		if len(updateTicketsCmdFlags.attachment) > 0 {
+			f, err := os.Open(updateTicketsCmdFlags.attachment)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer f.Close()
+			err = t.AddAttachment(tkt, filepath.Base(updateTicketsCmdFlags.attachment), f)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		if len(updateTicketsCmdFlags.title) > 0 {
 			tkt.Title = updateTicketsCmdFlags.title
