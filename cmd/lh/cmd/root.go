@@ -7,9 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/nwidger/lighthouse"
+	"github.com/nwidger/lighthouse/milestones"
+	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -90,7 +93,7 @@ func init() {
 	RootCmd.PersistentFlags().StringP("token", "t", "", "Lighthouse API token")
 	RootCmd.PersistentFlags().String("email", "", "Lighthouse email (cannot be used with --token)")
 	RootCmd.PersistentFlags().String("password", "", "Lighthouse password (cannot be used with --token)")
-	RootCmd.PersistentFlags().IntP("project", "p", 0, "Lighthouse project ID")
+	RootCmd.PersistentFlags().StringP("project", "p", "", "Lighthouse project ID")
 	viper.BindPFlag("account", RootCmd.PersistentFlags().Lookup("account"))
 	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
 	viper.BindPFlag("email", RootCmd.PersistentFlags().Lookup("email"))
@@ -124,9 +127,102 @@ func JSON(v interface{}) {
 }
 
 func Project() int {
-	projectID := viper.GetInt("project")
-	if projectID == 0 {
+	projectStr := viper.GetString("project")
+	if len(projectStr) == 0 {
 		log.Fatal("Please specify project ID via -p, --project, LH_PROJECT or config file")
 	}
+	projectID, err := ProjectID(projectStr)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return projectID
+}
+
+func Users() (map[string]*projects.User, error) {
+	projectID := Project()
+	p := projects.NewService(service)
+	ms, err := p.Memberships(projectID)
+	if err != nil {
+		return nil, err
+	}
+	userMap := map[string]*projects.User{}
+	for _, m := range ms {
+		userMap[m.User.Name] = m.User
+	}
+	return userMap, nil
+}
+
+func UserID(userStr string) (int, error) {
+	id, err := strconv.ParseInt(userStr, 10, 64)
+	if err == nil {
+		return int(id), nil
+	}
+	us, err := Users()
+	if err != nil {
+		return 0, err
+	}
+	u, ok := us[userStr]
+	if !ok {
+		return 0, fmt.Errorf("no such user %q", userStr)
+	}
+	return u.ID, nil
+}
+
+func Milestones() (map[string]*milestones.Milestone, error) {
+	projectID := Project()
+	m := milestones.NewService(service, projectID)
+	ms, err := m.ListAll(&milestones.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	milestonesMap := map[string]*milestones.Milestone{}
+	for _, milestone := range ms {
+		milestonesMap[milestone.Title] = milestone
+	}
+	return milestonesMap, nil
+}
+
+func MilestoneID(milestoneStr string) (int, error) {
+	id, err := strconv.ParseInt(milestoneStr, 10, 64)
+	if err == nil {
+		return int(id), nil
+	}
+	ms, err := Milestones()
+	if err != nil {
+		return 0, err
+	}
+	m, ok := ms[milestoneStr]
+	if !ok {
+		return 0, fmt.Errorf("no such milestone %q", milestoneStr)
+	}
+	return m.ID, nil
+}
+
+func Projects() (map[string]*projects.Project, error) {
+	p := projects.NewService(service)
+	ps, err := p.List()
+	if err != nil {
+		return nil, err
+	}
+	projectsMap := map[string]*projects.Project{}
+	for _, project := range ps {
+		projectsMap[project.Name] = project
+	}
+	return projectsMap, nil
+}
+
+func ProjectID(projectStr string) (int, error) {
+	id, err := strconv.ParseInt(projectStr, 10, 64)
+	if err == nil {
+		return int(id), nil
+	}
+	ps, err := Projects()
+	if err != nil {
+		return 0, err
+	}
+	p, ok := ps[projectStr]
+	if !ok {
+		return 0, fmt.Errorf("no such project %q", projectStr)
+	}
+	return p.ID, nil
 }
