@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log"
-	"strconv"
 
 	"github.com/nwidger/lighthouse/messages"
 	"github.com/spf13/cobra"
@@ -10,15 +9,15 @@ import (
 
 // messageCmd represents the message command
 var deleteMessageCmd = &cobra.Command{
-	Use:   "message [id]",
+	Use:   "message [id-or-title]",
 	Short: "Delete a message (requires -p)",
 	Run: func(cmd *cobra.Command, args []string) {
 		projectID := Project()
 		m := messages.NewService(service, projectID)
 		if len(args) == 0 {
-			log.Fatal("must supply message ID")
+			log.Fatal("must supply message ID or title")
 		}
-		messageID, err := strconv.Atoi(args[0])
+		messageID, err := MessageID(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
