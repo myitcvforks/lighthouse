@@ -25,14 +25,15 @@ var ticketsCmd = &cobra.Command{
 			err error
 			ts  tickets.Tickets
 		)
+		flags := ticketsCmdFlags
 		projectID := Project()
 		t := tickets.NewService(service, projectID)
 		opts := &tickets.ListOptions{
-			Query: ticketsCmdFlags.query,
-			Limit: ticketsCmdFlags.limit,
-			Page:  ticketsCmdFlags.page,
+			Query: flags.query,
+			Limit: flags.limit,
+			Page:  flags.page,
 		}
-		if ticketsCmdFlags.all {
+		if flags.all {
 			ts, err = t.ListAll(opts)
 		} else {
 			ts, err = t.List(opts)

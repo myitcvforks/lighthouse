@@ -19,6 +19,7 @@ var userCmd = &cobra.Command{
 	Use:   "user [id]",
 	Short: "Get information about a Lighthouse user",
 	Run: func(cmd *cobra.Command, args []string) {
+		flags := userCmdFlags
 		u := users.NewService(service)
 		if len(args) == 0 {
 			log.Fatal("must supply user ID")
@@ -27,7 +28,7 @@ var userCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if userCmdFlags.memberships {
+		if flags.memberships {
 			memberships, err := u.Memberships(userID)
 			if err != nil {
 				log.Fatal(err)

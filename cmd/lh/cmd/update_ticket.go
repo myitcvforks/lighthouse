@@ -28,6 +28,7 @@ var updateTicketCmd = &cobra.Command{
 	Short: "Update a ticket (requires -p)",
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
+		flags := updateTicketsCmdFlags
 		projectID := Project()
 		t := tickets.NewService(service, projectID)
 		if len(args) == 0 {
@@ -41,40 +42,40 @@ var updateTicketCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if len(updateTicketsCmdFlags.attachment) > 0 {
-			f, err := os.Open(updateTicketsCmdFlags.attachment)
+		if len(flags.attachment) > 0 {
+			f, err := os.Open(flags.attachment)
 			if err != nil {
 				log.Fatal(err)
 			}
 			defer f.Close()
-			err = t.AddAttachment(tkt, filepath.Base(updateTicketsCmdFlags.attachment), f)
+			err = t.AddAttachment(tkt, filepath.Base(flags.attachment), f)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		if len(updateTicketsCmdFlags.title) > 0 {
-			tkt.Title = updateTicketsCmdFlags.title
+		if len(flags.title) > 0 {
+			tkt.Title = flags.title
 		}
-		if len(updateTicketsCmdFlags.comment) > 0 {
-			tkt.Body = updateTicketsCmdFlags.comment
+		if len(flags.comment) > 0 {
+			tkt.Body = flags.comment
 		}
-		if len(updateTicketsCmdFlags.state) > 0 {
-			tkt.State = updateTicketsCmdFlags.state
+		if len(flags.state) > 0 {
+			tkt.State = flags.state
 		}
-		if len(updateTicketsCmdFlags.assigned) > 0 {
-			tkt.AssignedUserID, err = UserID(updateTicketsCmdFlags.assigned)
+		if len(flags.assigned) > 0 {
+			tkt.AssignedUserID, err = UserID(flags.assigned)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		if len(updateTicketsCmdFlags.milestone) > 0 {
-			tkt.MilestoneID, err = MilestoneID(updateTicketsCmdFlags.milestone)
+		if len(flags.milestone) > 0 {
+			tkt.MilestoneID, err = MilestoneID(flags.milestone)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		if len(updateTicketsCmdFlags.tags) > 0 {
-			tkt.Tag = updateTicketsCmdFlags.tags
+		if len(flags.tags) > 0 {
+			tkt.Tag = flags.tags
 		}
 		err = t.Update(tkt)
 		if err != nil {

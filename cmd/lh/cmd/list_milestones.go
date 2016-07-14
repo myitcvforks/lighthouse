@@ -23,12 +23,13 @@ var milestonesCmd = &cobra.Command{
 			err error
 			ms  milestones.Milestones
 		)
+		flags := milestonesCmdFlags
 		projectID := Project()
 		m := milestones.NewService(service, projectID)
 		opts := &milestones.ListOptions{
-			Page: milestonesCmdFlags.page,
+			Page: flags.page,
 		}
-		if milestonesCmdFlags.all {
+		if flags.all {
 			ms, err = m.ListAll(opts)
 		} else {
 			ms, err = m.List(opts)

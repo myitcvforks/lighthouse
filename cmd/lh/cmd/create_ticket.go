@@ -24,25 +24,26 @@ var createTicketCmd = &cobra.Command{
 	Short: "Create a ticket (requires -p)",
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
+		flags := createTicketsCmdFlags
 		projectID := Project()
 		t := tickets.NewService(service, projectID)
 		tc := &tickets.Ticket{
-			Title: createTicketsCmdFlags.title,
-			Body:  createTicketsCmdFlags.body,
-			State: createTicketsCmdFlags.state,
-			Tag:   createTicketsCmdFlags.tags,
+			Title: flags.title,
+			Body:  flags.body,
+			State: flags.state,
+			Tag:   flags.tags,
 		}
 		if len(tc.Title) == 0 {
 			log.Fatal("Please specify ticket title with --title")
 		}
-		if len(createTicketsCmdFlags.assigned) > 0 {
-			tc.AssignedUserID, err = UserID(createTicketsCmdFlags.assigned)
+		if len(flags.assigned) > 0 {
+			tc.AssignedUserID, err = UserID(flags.assigned)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
-		if len(createTicketsCmdFlags.milestone) > 0 {
-			tc.MilestoneID, err = MilestoneID(createTicketsCmdFlags.milestone)
+		if len(flags.milestone) > 0 {
+			tc.MilestoneID, err = MilestoneID(flags.milestone)
 			if err != nil {
 				log.Fatal(err)
 			}
