@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/changesets"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +14,7 @@ var changesetsCmd = &cobra.Command{
 		c := changesets.NewService(service, projectID)
 		cs, err := c.List()
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(cs)
 	},

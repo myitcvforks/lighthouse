@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/bins"
 	"github.com/spf13/cobra"
 )
@@ -30,14 +28,14 @@ var createBinCmd = &cobra.Command{
 			Query:   flags.query,
 		}
 		if len(bin.Name) == 0 {
-			log.Fatal("Please specify bin name with --name")
+			FatalUsage(cmd, "Please specify bin name with --name")
 		}
 		if len(bin.Query) == 0 {
-			log.Fatal("Please specify bin query with --query")
+			FatalUsage(cmd, "Please specify bin query with --query")
 		}
 		nb, err := b.Create(bin)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(nb)
 	},

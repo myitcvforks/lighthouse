@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
 )
@@ -21,22 +19,22 @@ var projectCmd = &cobra.Command{
 		flags := getProjectCmdFlags
 		p := projects.NewService(service)
 		if len(args) == 0 {
-			log.Fatal("must supply project ID or name")
+			FatalUsage(cmd, "must supply project ID or name")
 		}
 		projectID, err := ProjectID(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		if flags.memberships {
 			ms, err := p.Memberships(projectID)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			JSON(ms)
 		} else {
 			project, err := p.Get(projectID)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			JSON(project)
 		}

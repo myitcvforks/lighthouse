@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/messages"
 	"github.com/spf13/cobra"
 )
@@ -15,15 +13,15 @@ var messageCmd = &cobra.Command{
 		projectID := Project()
 		m := messages.NewService(service, projectID)
 		if len(args) == 0 {
-			log.Fatal("must supply message ID or title")
+			FatalUsage(cmd, "must supply message ID or title")
 		}
 		msgID, err := MessageID(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		msg, err := m.Get(msgID)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(msg)
 	},

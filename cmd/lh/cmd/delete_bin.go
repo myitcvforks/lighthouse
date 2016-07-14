@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/bins"
 	"github.com/spf13/cobra"
 )
@@ -15,15 +13,15 @@ var deleteBinCmd = &cobra.Command{
 		projectID := Project()
 		b := bins.NewService(service, projectID)
 		if len(args) == 0 {
-			log.Fatal("must supply bin ID or name")
+			FatalUsage(cmd, "must supply bin ID or name")
 		}
 		binID, err := BinID(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		err = b.Delete(binID)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 	},
 }

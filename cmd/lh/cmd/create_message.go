@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/messages"
 	"github.com/spf13/cobra"
 )
@@ -28,14 +26,14 @@ var createMessageCmd = &cobra.Command{
 			Body:  flags.body,
 		}
 		if len(message.Title) == 0 {
-			log.Fatal("Please specify message title with --title")
+			FatalUsage(cmd, "Please specify message title with --title")
 		}
 		if len(message.Body) == 0 {
-			log.Fatal("Please specify message body with --body")
+			FatalUsage(cmd, "Please specify message body with --body")
 		}
 		nm, err := m.Create(message)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(nm)
 	},

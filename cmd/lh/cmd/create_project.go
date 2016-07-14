@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
 )
@@ -29,11 +27,11 @@ var createProjectCmd = &cobra.Command{
 			Public:   flags.public,
 		}
 		if len(project.Name) == 0 {
-			log.Fatal("Please specify project name with --name")
+			FatalUsage(cmd, "Please specify project name with --name")
 		}
 		np, err := p.Create(project)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(np)
 	},

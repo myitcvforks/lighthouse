@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
 )
@@ -14,15 +12,15 @@ var deleteProjectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		p := projects.NewService(service)
 		if len(args) == 0 {
-			log.Fatal("must supply project ID or name")
+			FatalUsage(cmd, "must supply project ID or name")
 		}
 		projectID, err := ProjectID(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		err = p.Delete(projectID)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 	},
 }

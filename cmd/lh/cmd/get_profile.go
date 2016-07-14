@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/profiles"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +13,7 @@ var profileCmd = &cobra.Command{
 		p := profiles.NewService(service)
 		u, err := p.Get()
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(u)
 	},

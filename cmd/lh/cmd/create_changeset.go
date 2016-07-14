@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"log"
+	"fmt"
 	"strings"
 	"time"
 
@@ -35,14 +35,14 @@ var createChangesetCmd = &cobra.Command{
 			Title:    flags.title,
 		}
 		if len(flags.changes) == 0 {
-			log.Fatal("Please specify changeset changes with --changes")
+			FatalUsage(cmd, "Please specify changeset changes with --changes")
 		}
 		changes := changesets.Changes{}
 		for _, cng := range strings.Split(flags.changes, ",") {
 			cng = strings.TrimSpace(cng)
 			idx := strings.Index(cng, " ")
 			if idx == -1 {
-				log.Fatalf("unable to parse change %q", cng)
+				FatalUsage(cmd, fmt.Sprintf("unable to parse change %q", cng))
 			}
 			op, path := strings.TrimSpace(cng[:idx]), strings.TrimSpace(cng[idx:])
 			changes = append(changes, &changesets.Change{
@@ -52,28 +52,28 @@ var createChangesetCmd = &cobra.Command{
 		}
 		changeset.Changes = changes
 		if len(changeset.Revision) == 0 {
-			log.Fatal("Please specify changeset revision with --revision")
+			FatalUsage(cmd, "Please specify changeset revision with --revision")
 		}
 		if len(changeset.Title) == 0 {
-			log.Fatal("Please specify changeset title with --title")
+			FatalUsage(cmd, "Please specify changeset title with --title")
 		}
 		if len(flags.time) > 0 {
 			changedAt, err := time.Parse("2006-01-02 15:04:05", flags.time)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			changeset.ChangedAt = &changedAt
 		}
 		if len(flags.user) > 0 {
 			userID, err := UserID(flags.user)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			changeset.UserID = userID
 		}
 		nm, err := m.Create(changeset)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(nm)
 	},

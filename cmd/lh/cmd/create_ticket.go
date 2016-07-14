@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/tickets"
 	"github.com/spf13/cobra"
 )
@@ -34,23 +32,23 @@ var createTicketCmd = &cobra.Command{
 			Tag:   flags.tags,
 		}
 		if len(tc.Title) == 0 {
-			log.Fatal("Please specify ticket title with --title")
+			FatalUsage(cmd, "Please specify ticket title with --title")
 		}
 		if len(flags.assigned) > 0 {
 			tc.AssignedUserID, err = UserID(flags.assigned)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 		}
 		if len(flags.milestone) > 0 {
 			tc.MilestoneID, err = MilestoneID(flags.milestone)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 		}
 		nt, err := t.Create(tc)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(nt)
 	},

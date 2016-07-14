@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/bins"
 	"github.com/spf13/cobra"
 )
@@ -16,7 +14,7 @@ var binsCmd = &cobra.Command{
 		b := bins.NewService(service, projectID)
 		bs, err := b.List()
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(bs)
 	},

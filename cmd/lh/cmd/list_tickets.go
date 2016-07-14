@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/tickets"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +37,7 @@ var ticketsCmd = &cobra.Command{
 			ts, err = t.List(opts)
 		}
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(ts)
 	},

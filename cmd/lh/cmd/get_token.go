@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/tokens"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -16,11 +14,11 @@ var tokenCmd = &cobra.Command{
 		tokens := tokens.NewService(service)
 		tk := viper.GetString("token")
 		if len(args) == 0 && len(tk) == 0 {
-			log.Fatal("must supply token")
+			FatalUsage(cmd, "must supply token")
 		}
 		t, err := tokens.Get(tk)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(t)
 	},

@@ -57,7 +57,7 @@ The default config file is $HOME/.lh.yaml but can be overridden with
 		account, token, email, password := viper.GetString("account"), viper.GetString("token"),
 			viper.GetString("email"), viper.GetString("password")
 		if len(account) == 0 {
-			log.Fatal("Please specify Lighthouse account name via -a, --account, LH_ACCOUNT or config file")
+			FatalUsage(cmd, "Please specify Lighthouse account name via -a, --account, LH_ACCOUNT or config file")
 		}
 		var client *http.Client
 		if len(token) > 0 {
@@ -67,13 +67,13 @@ The default config file is $HOME/.lh.yaml but can be overridden with
 			if strings.HasPrefix(password, "@") && len(password) > 1 {
 				buf, err := ioutil.ReadFile(password[1:])
 				if err != nil {
-					log.Fatal(err)
+					FatalUsage(cmd, err)
 				}
 				pw = strings.TrimSpace(string(buf))
 			}
 			client = lighthouse.NewClientBasicAuth(email, pw)
 		} else {
-			log.Fatal("Please specify token or email & password")
+			FatalUsage(cmd, "Please specify token or email & password")
 		}
 		service = lighthouse.NewService(account, client)
 	},
@@ -296,4 +296,11 @@ func MessageID(messageStr string) (int, error) {
 		return 0, fmt.Errorf("no such message %q", messageStr)
 	}
 	return m.ID, nil
+}
+
+func FatalUsage(cmd *cobra.Command, v ...interface{}) {
+	fmt.Println(v...)
+	fmt.Println()
+	cmd.Usage()
+	os.Exit(1)
 }

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/milestones"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +33,7 @@ var milestonesCmd = &cobra.Command{
 			ms, err = m.List(opts)
 		}
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(ms)
 	},

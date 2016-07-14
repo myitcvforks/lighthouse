@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/changesets"
 	"github.com/spf13/cobra"
 )
@@ -15,12 +13,12 @@ var changesetCmd = &cobra.Command{
 		projectID := Project()
 		c := changesets.NewService(service, projectID)
 		if len(args) == 0 {
-			log.Fatal("must supply revision")
+			FatalUsage(cmd, "must supply revision")
 		}
 		revision := args[0]
 		changeset, err := c.Get(revision)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(changeset)
 	},

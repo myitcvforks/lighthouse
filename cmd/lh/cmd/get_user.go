@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"log"
-
 	"github.com/nwidger/lighthouse/users"
 	"github.com/spf13/cobra"
 )
@@ -21,22 +19,22 @@ var userCmd = &cobra.Command{
 		flags := userCmdFlags
 		u := users.NewService(service)
 		if len(args) == 0 {
-			log.Fatal("must supply user ID or name")
+			FatalUsage(cmd, "must supply user ID or name")
 		}
 		userID, err := UserID(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		if flags.memberships {
 			memberships, err := u.Memberships(userID)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			JSON(memberships)
 		} else {
 			user, err := u.Get(userID)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			JSON(user)
 		}

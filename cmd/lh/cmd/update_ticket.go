@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -32,25 +31,25 @@ var updateTicketCmd = &cobra.Command{
 		projectID := Project()
 		t := tickets.NewService(service, projectID)
 		if len(args) == 0 {
-			log.Fatal("must supply ticket number")
+			FatalUsage(cmd, "must supply ticket number")
 		}
 		number, err := strconv.Atoi(args[0])
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		tkt, err := t.Get(number)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		if len(flags.attachment) > 0 {
 			f, err := os.Open(flags.attachment)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			defer f.Close()
 			err = t.AddAttachment(tkt, filepath.Base(flags.attachment), f)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 		}
 		if len(flags.title) > 0 {
@@ -65,13 +64,13 @@ var updateTicketCmd = &cobra.Command{
 		if len(flags.assigned) > 0 {
 			tkt.AssignedUserID, err = UserID(flags.assigned)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 		}
 		if len(flags.milestone) > 0 {
 			tkt.MilestoneID, err = MilestoneID(flags.milestone)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 		}
 		if len(flags.tags) > 0 {
@@ -79,7 +78,7 @@ var updateTicketCmd = &cobra.Command{
 		}
 		err = t.Update(tkt)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(tkt)
 	},

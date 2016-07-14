@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"log"
 	"time"
 
 	"github.com/nwidger/lighthouse/milestones"
@@ -30,18 +29,18 @@ var createMilestoneCmd = &cobra.Command{
 			Title: flags.title,
 		}
 		if len(milestone.Title) == 0 {
-			log.Fatal("Please specify milestone title with --title")
+			FatalUsage(cmd, "Please specify milestone title with --title")
 		}
 		if len(flags.due) > 0 {
 			due, err := time.Parse("2006-01-02", flags.due)
 			if err != nil {
-				log.Fatal(err)
+				FatalUsage(cmd, err)
 			}
 			milestone.DueOn = &due
 		}
 		nm, err := m.Create(milestone)
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(nm)
 	},

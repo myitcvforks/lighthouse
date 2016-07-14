@@ -1,10 +1,6 @@
 package cmd
 
-import (
-	"log"
-
-	"github.com/spf13/cobra"
-)
+import "github.com/spf13/cobra"
 
 // planCmd represents the plan command
 var planCmd = &cobra.Command{
@@ -13,7 +9,7 @@ var planCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		p, err := service.Plan()
 		if err != nil {
-			log.Fatal(err)
+			FatalUsage(cmd, err)
 		}
 		JSON(p)
 	},
