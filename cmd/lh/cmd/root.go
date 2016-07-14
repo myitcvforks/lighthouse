@@ -149,7 +149,16 @@ func Users() (map[string]*projects.User, error) {
 	}
 	userMap := map[string]*projects.User{}
 	for _, m := range ms {
-		userMap[m.User.Name] = m.User
+		lower := strings.ToLower(m.User.Name)
+		userMap[lower] = m.User
+		idx := strings.Index(lower, " ")
+		if idx != -1 {
+			firstName := lower[:idx]
+			if firstName != lower {
+				userMap[firstName] = m.User
+				userMap[strings.ToLower(firstName)] = m.User
+			}
+		}
 	}
 	return userMap, nil
 }
@@ -163,7 +172,7 @@ func UserID(userStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	u, ok := us[userStr]
+	u, ok := us[strings.ToLower(userStr)]
 	if !ok {
 		return 0, fmt.Errorf("no such user %q", userStr)
 	}
@@ -179,7 +188,7 @@ func Milestones() (map[string]*milestones.Milestone, error) {
 	}
 	milestonesMap := map[string]*milestones.Milestone{}
 	for _, milestone := range ms {
-		milestonesMap[milestone.Title] = milestone
+		milestonesMap[strings.ToLower(milestone.Title)] = milestone
 	}
 	return milestonesMap, nil
 }
@@ -193,7 +202,7 @@ func MilestoneID(milestoneStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	m, ok := ms[milestoneStr]
+	m, ok := ms[strings.ToLower(milestoneStr)]
 	if !ok {
 		return 0, fmt.Errorf("no such milestone %q", milestoneStr)
 	}
@@ -208,7 +217,7 @@ func Projects() (map[string]*projects.Project, error) {
 	}
 	projectsMap := map[string]*projects.Project{}
 	for _, project := range ps {
-		projectsMap[project.Name] = project
+		projectsMap[strings.ToLower(project.Name)] = project
 	}
 	return projectsMap, nil
 }
@@ -222,7 +231,7 @@ func ProjectID(projectStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	p, ok := ps[projectStr]
+	p, ok := ps[strings.ToLower(projectStr)]
 	if !ok {
 		return 0, fmt.Errorf("no such project %q", projectStr)
 	}
@@ -238,7 +247,7 @@ func Bins() (map[string]*bins.Bin, error) {
 	}
 	binsMap := map[string]*bins.Bin{}
 	for _, bin := range ms {
-		binsMap[bin.Name] = bin
+		binsMap[strings.ToLower(bin.Name)] = bin
 	}
 	return binsMap, nil
 }
@@ -252,7 +261,7 @@ func BinID(binStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	m, ok := ms[binStr]
+	m, ok := ms[strings.ToLower(binStr)]
 	if !ok {
 		return 0, fmt.Errorf("no such bin %q", binStr)
 	}
@@ -268,7 +277,7 @@ func Messages() (map[string]*messages.Message, error) {
 	}
 	messagesMap := map[string]*messages.Message{}
 	for _, message := range ms {
-		messagesMap[message.Title] = message
+		messagesMap[strings.ToLower(message.Title)] = message
 	}
 	return messagesMap, nil
 }
@@ -282,7 +291,7 @@ func MessageID(messageStr string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	m, ok := ms[messageStr]
+	m, ok := ms[strings.ToLower(messageStr)]
 	if !ok {
 		return 0, fmt.Errorf("no such message %q", messageStr)
 	}
