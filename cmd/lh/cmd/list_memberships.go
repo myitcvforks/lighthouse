@@ -5,18 +5,20 @@ import (
 
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // membershipsCmd represents the memberships command
 var membershipsCmd = &cobra.Command{
-	Use:   "memberships [project-id]",
+	Use:   "memberships [project-id-or-name]",
 	Short: "List a project's memberships",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := projects.NewService(service)
-		projectID := viper.GetInt("project")
-		if len(args) == 0 && projectID == 0 {
+		if len(args) == 0 {
 			log.Fatal("Please specify project ID via -p, --project, LH_PROJECT or config file")
+		}
+		projectID, err := ProjectID(args[0])
+		if err != nil {
+			log.Fatal(err)
 		}
 		ms, err := p.Memberships(projectID)
 		if err != nil {
