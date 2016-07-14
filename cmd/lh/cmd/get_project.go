@@ -9,12 +9,12 @@ import (
 
 // projectCmd represents the project command
 var projectCmd = &cobra.Command{
-	Use:   "project [id]",
+	Use:   "project [id-or-name]",
 	Short: "Get your Lighthouse project",
 	Run: func(cmd *cobra.Command, args []string) {
 		p := projects.NewService(service)
 		if len(args) == 0 {
-			log.Fatal("must supply project ID")
+			log.Fatal("must supply project ID or name")
 		}
 		projectID, err := ProjectID(args[0])
 		if err != nil {

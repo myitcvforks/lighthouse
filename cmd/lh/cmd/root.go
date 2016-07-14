@@ -11,6 +11,8 @@ import (
 	"strings"
 
 	"github.com/nwidger/lighthouse"
+	"github.com/nwidger/lighthouse/bins"
+	"github.com/nwidger/lighthouse/messages"
 	"github.com/nwidger/lighthouse/milestones"
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/spf13/cobra"
@@ -225,4 +227,64 @@ func ProjectID(projectStr string) (int, error) {
 		return 0, fmt.Errorf("no such project %q", projectStr)
 	}
 	return p.ID, nil
+}
+
+func Bins() (map[string]*bins.Bin, error) {
+	projectID := Project()
+	m := bins.NewService(service, projectID)
+	ms, err := m.List()
+	if err != nil {
+		return nil, err
+	}
+	binsMap := map[string]*bins.Bin{}
+	for _, bin := range ms {
+		binsMap[bin.Name] = bin
+	}
+	return binsMap, nil
+}
+
+func BinID(binStr string) (int, error) {
+	id, err := strconv.ParseInt(binStr, 10, 64)
+	if err == nil {
+		return int(id), nil
+	}
+	ms, err := Bins()
+	if err != nil {
+		return 0, err
+	}
+	m, ok := ms[binStr]
+	if !ok {
+		return 0, fmt.Errorf("no such bin %q", binStr)
+	}
+	return m.ID, nil
+}
+
+func Messages() (map[string]*messages.Message, error) {
+	projectID := Project()
+	m := messages.NewService(service, projectID)
+	ms, err := m.List()
+	if err != nil {
+		return nil, err
+	}
+	messagesMap := map[string]*messages.Message{}
+	for _, message := range ms {
+		messagesMap[message.Title] = message
+	}
+	return messagesMap, nil
+}
+
+func MessageID(messageStr string) (int, error) {
+	id, err := strconv.ParseInt(messageStr, 10, 64)
+	if err == nil {
+		return int(id), nil
+	}
+	ms, err := Messages()
+	if err != nil {
+		return 0, err
+	}
+	m, ok := ms[messageStr]
+	if !ok {
+		return 0, fmt.Errorf("no such message %q", messageStr)
+	}
+	return m.ID, nil
 }

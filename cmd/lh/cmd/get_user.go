@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"log"
-	"strconv"
 
 	"github.com/nwidger/lighthouse/users"
 	"github.com/spf13/cobra"
@@ -16,15 +15,15 @@ var userCmdFlags userCmdOpts
 
 // userCmd represents the user command
 var userCmd = &cobra.Command{
-	Use:   "user [id]",
+	Use:   "user [id-or-name]",
 	Short: "Get information about a Lighthouse user",
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := userCmdFlags
 		u := users.NewService(service)
 		if len(args) == 0 {
-			log.Fatal("must supply user ID")
+			log.Fatal("must supply user ID or name")
 		}
-		userID, err := strconv.Atoi(args[0])
+		userID, err := UserID(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
