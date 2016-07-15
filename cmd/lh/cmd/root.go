@@ -298,6 +298,17 @@ func MessageID(messageStr string) (int, error) {
 	return m.ID, nil
 }
 
+func TicketID(numberStr string) (int, error) {
+	if strings.HasPrefix(numberStr, "#") {
+		numberStr = numberStr[1:]
+	}
+	number, err := strconv.ParseInt(numberStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid ticket number %q", numberStr)
+	}
+	return int(number), nil
+}
+
 func FatalUsage(cmd *cobra.Command, v ...interface{}) {
 	fmt.Println(v...)
 	fmt.Println()

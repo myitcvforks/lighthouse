@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/nwidger/lighthouse/tickets"
 	"github.com/spf13/cobra"
@@ -33,7 +32,7 @@ var updateTicketCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply ticket number")
 		}
-		number, err := strconv.Atoi(args[0])
+		number, err := TicketID(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -80,17 +79,21 @@ var updateTicketCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
+		tkt, err = t.Get(number)
+		if err != nil {
+			FatalUsage(cmd, err)
+		}
 		JSON(tkt)
 	},
 }
 
 func init() {
 	updateCmd.AddCommand(updateTicketCmd)
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.title, "title", "", "Change ticket title (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.comment, "comment", "", "Add a ticket comment (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.state, "state", "", "Change ticket state (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.assigned, "assigned", "", "Change user assigned to ticket (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.milestone, "milestone", "", "Assign ticket to a milestone (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.tags, "tags", "", "Comma-separated tags (optional)")
-	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.attachment, "attachment", "", "Add file as attachment to ticket (optional)")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.title, "title", "", "Change ticket title")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.comment, "comment", "", "Add a ticket comment")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.state, "state", "", "Change ticket state")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.assigned, "assigned", "", "Change user assigned to ticket")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.milestone, "milestone", "", "Assign ticket to a milestone")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.tags, "tags", "", "Comma-separated tags")
+	updateTicketCmd.Flags().StringVar(&updateTicketsCmdFlags.attachment, "attachment", "", "Add file as attachment to ticket")
 }
