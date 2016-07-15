@@ -480,7 +480,6 @@ func (s *Service) GetAttachment(a *Attachment) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
 	err = lighthouse.CheckResponse(resp, http.StatusOK)
 	if err != nil {

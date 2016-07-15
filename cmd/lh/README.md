@@ -260,6 +260,12 @@ Get ticket `2428`:
 $ lh get ticket 2428
 ```
 
+Download attachment `bad.conf` from ticket `2428`:
+
+``` shell
+$ lh get ticket 2428 --attachment bad.conf > bad.conf
+```
+
 List all tickets matching query `milestone:"XYZ v9"`
 
 ``` shell
