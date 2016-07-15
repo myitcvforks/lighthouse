@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"strconv"
-
 	"github.com/nwidger/lighthouse/tickets"
 	"github.com/spf13/cobra"
 )
@@ -17,7 +15,7 @@ var deleteTicketCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply ticket number")
 		}
-		number, err := strconv.Atoi(args[0])
+		number, err := TicketID(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

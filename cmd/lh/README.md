@@ -44,26 +44,90 @@ Usage:
   lh [command]
 
 Available Commands:
-  get         Get Lighthouse resources by ID
+  create      Create Lighthouse resources
+  delete      Delete Lighthouse resources
+  get         Get Lighthouse resources
   list        List Lighthouse resources
+  update      Update Lighthouse resources
 
 Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -h, --help              help for lh
       --password string   Lighthouse password (cannot be used with --token)
-  -p, --project int       Lighthouse project ID
+  -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
 
 Use "lh [command] --help" for more information about a command.
 ```
 
-Use `lh get` to retrieve a specific Lighthouse resource (usually by
-ID):
+Use `lh create` to create Lighthouse resources:
+
+``` shell
+$ lh create
+Create Lighthouse resources
+
+Usage:
+  lh create [command]
+
+Available Commands:
+  bin         Create a bin (requires -p)
+  changeset   Create a changeset (requires -p)
+  message     Create a message (requires -p)
+  milestone   Create a milestone (requires -p)
+  project     Create a project
+  ticket      Create a ticket (requires -p)
+
+Flags:
+  -h, --help   help for create
+
+Global Flags:
+  -a, --account string    Lighthouse account name
+      --config string     config file (default is $HOME/.lh.yaml)
+      --email string      Lighthouse email (cannot be used with --token)
+      --password string   Lighthouse password (cannot be used with --token)
+  -p, --project string    Lighthouse project ID or name
+  -t, --token string      Lighthouse API token
+
+Use "lh create [command] --help" for more information about a command.
+```
+
+Use `lh delete` to delete Lighthouse resources:
+
+``` shell
+Delete Lighthouse resources
+
+Usage:
+  lh delete [command]
+
+Available Commands:
+  bin         Delete a bin (requires -p)
+  changeset   Delete a changeset (requires -p)
+  message     Delete a message (requires -p)
+  milestone   Delete a milestone (requires -p)
+  project     Delete a project (requires -p)
+  ticket      Delete a ticket (requires -p)
+
+Flags:
+  -h, --help   help for delete
+
+Global Flags:
+  -a, --account string    Lighthouse account name
+      --config string     config file (default is $HOME/.lh.yaml)
+      --email string      Lighthouse email (cannot be used with --token)
+      --password string   Lighthouse password (cannot be used with --token)
+  -p, --project string    Lighthouse project ID or name
+  -t, --token string      Lighthouse API token
+
+Use "lh delete [command] --help" for more information about a command.
+```
+
+Use `lh get` to retrieve a specific Lighthouse resource:
 
 ``` shell
 $ lh get
-Get Lighthouse resources by ID
+Get Lighthouse resources
 
 Usage:
   lh get [command]
@@ -75,16 +139,20 @@ Available Commands:
   milestone   Get a milestone (requires -p)
   plan        Get your Lighthouse plan
   profile     Get your Lighthouse profile
+  project     Get your Lighthouse project
   ticket      Get a ticket (requires -p)
   token       Get information about an API token
   user        Get information about a Lighthouse user
+
+Flags:
+  -h, --help   help for get
 
 Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
       --password string   Lighthouse password (cannot be used with --token)
-  -p, --project int       Lighthouse project ID
+  -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
 
 Use "lh get [command] --help" for more information about a command.
@@ -102,32 +170,65 @@ Usage:
 Available Commands:
   bins        List ticket bins (requires -p)
   changesets  List changesets (requires -p)
-  memberships List a project's memberships
   messages    List messages (requires -p)
   milestones  List milestones (requires -p)
   projects    List projects
   tickets     List tickets (requires -p)
+
+Flags:
+  -h, --help   help for list
 
 Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
       --password string   Lighthouse password (cannot be used with --token)
-  -p, --project int       Lighthouse project ID
+  -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
 
 Use "lh list [command] --help" for more information about a command.
 ```
 
+Use `lh update` to update a specific Lighthouse resource:
+
+``` shel
+$ lh update
+Update Lighthouse resources
+
+Usage:
+  lh update [command]
+
+Available Commands:
+  bin         Update a bin (requires -p)
+  message     Update a message (requires -p)
+  milestone   Update a milestone (requires -p)
+  project     Update a project
+  ticket      Update a ticket (requires -p)
+  user        Update information about a Lighthouse user
+
+Flags:
+  -h, --help   help for update
+
+Global Flags:
+  -a, --account string    Lighthouse account name
+      --config string     config file (default is $HOME/.lh.yaml)
+      --email string      Lighthouse email (cannot be used with --token)
+      --password string   Lighthouse password (cannot be used with --token)
+  -p, --project string    Lighthouse project ID or name
+  -t, --token string      Lighthouse API token
+
+Use "lh update [command] --help" for more information about a command.
+```
+
 ## Config File
 
 Modify the following example config file with your own account name,
-API token and project ID and save it to `$HOME/.lh.yaml`.
+API token and project and save it to `$HOME/.lh.yaml`.
 
 ``` yaml
 account: your-account-name
 token: deadbeefdeadbeefdeadbeefdeadbeefdeadbeef
-project: 1234
+project: your-project-name
 ```
 
 ## Output
@@ -139,7 +240,19 @@ to pretty-print the output or retrieve specific fields.
 ## Examples
 
 The following examples assume you have configured your account name,
-API token and project ID in the config file.
+API token and project in the config file.
+
+Create bin `Fred's Open Tickets`:
+
+``` shell
+$ lh create bin --name "Fred's Open Tickets" --query "assigned:fred state:open"
+```
+
+Delete milestone `v9`:
+
+``` shell
+$ lh delete milestone v9
+```
 
 Get ticket `2428`:
 
@@ -153,8 +266,8 @@ List all tickets matching query `milestone:"XYZ v9"`
 $ lh list tickets --all --query 'milestone:"XYZ v9"'
 ```
 
-List account memberships for user `999999`:
+Update ticket `2428`:
 
 ``` shell
-$ lh get user 999999 --memberships
+$ lh update ticket 2428 --comment "Looks good to me" --state resolved --assigned fred
 ```

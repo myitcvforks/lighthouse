@@ -95,7 +95,7 @@ func init() {
 	RootCmd.PersistentFlags().StringP("token", "t", "", "Lighthouse API token")
 	RootCmd.PersistentFlags().String("email", "", "Lighthouse email (cannot be used with --token)")
 	RootCmd.PersistentFlags().String("password", "", "Lighthouse password (cannot be used with --token)")
-	RootCmd.PersistentFlags().StringP("project", "p", "", "Lighthouse project ID")
+	RootCmd.PersistentFlags().StringP("project", "p", "", "Lighthouse project ID or name")
 	viper.BindPFlag("account", RootCmd.PersistentFlags().Lookup("account"))
 	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
 	viper.BindPFlag("email", RootCmd.PersistentFlags().Lookup("email"))
