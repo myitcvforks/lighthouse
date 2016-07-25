@@ -11,6 +11,8 @@ type updateMilestonesCmdOpts struct {
 	goals string
 	title string
 	due   string
+	close bool
+	open  bool
 }
 
 var updateMilestonesCmdFlags updateMilestonesCmdOpts
@@ -52,6 +54,18 @@ var updateMilestoneCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
+		if flags.close {
+			err = m.Close(milestoneID)
+			if err != nil {
+				FatalUsage(cmd, err)
+			}
+		}
+		if flags.open {
+			err = m.Open(milestoneID)
+			if err != nil {
+				FatalUsage(cmd, err)
+			}
+		}
 		milestone, err = m.Get(milestoneID)
 		if err != nil {
 			FatalUsage(cmd, err)
@@ -65,4 +79,6 @@ func init() {
 	updateMilestoneCmd.Flags().StringVar(&updateMilestonesCmdFlags.goals, "goals", "", "Change milestone goals")
 	updateMilestoneCmd.Flags().StringVar(&updateMilestonesCmdFlags.title, "title", "", "Change milestone title")
 	updateMilestoneCmd.Flags().StringVar(&updateMilestonesCmdFlags.due, "due", "", "Change milestone due date YYYY-MM-DD")
+	updateMilestoneCmd.Flags().BoolVar(&updateMilestonesCmdFlags.close, "close", false, "Close milestone")
+	updateMilestoneCmd.Flags().BoolVar(&updateMilestonesCmdFlags.open, "open", false, "Open milestone")
 }
