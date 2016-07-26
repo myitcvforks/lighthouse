@@ -191,7 +191,7 @@ Use "lh list [command] --help" for more information about a command.
 
 Use `lh update` to update a specific Lighthouse resource:
 
-``` shel
+``` shell
 $ lh update
 Update Lighthouse resources
 
@@ -204,6 +204,7 @@ Available Commands:
   milestone   Update a milestone (requires -p)
   project     Update a project
   ticket      Update a ticket (requires -p)
+  tickets     Bulk update tickets (requires -p)
   user        Update information about a Lighthouse user
 
 Flags:
