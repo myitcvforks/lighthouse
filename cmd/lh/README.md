@@ -6,7 +6,7 @@ A Golang CLI client for interacting with the
 
 ## Installation
 
-```
+``` no-highlight
 go get -u github.com/nwidger/lighthouse/cmd/lh
 ```
 
@@ -14,7 +14,7 @@ go get -u github.com/nwidger/lighthouse/cmd/lh
 
 Run `lh` with no arguments for usage help:
 
-``` shell
+``` no-highlight
 $ lh
 lh provides CLI access to the Lighthouse API http://help.lighthouseapp.com/kb/api
 
@@ -64,7 +64,7 @@ Use "lh [command] --help" for more information about a command.
 
 Use `lh create` to create Lighthouse resources:
 
-``` shell
+``` no-highlight
 $ lh create
 Create Lighthouse resources
 
@@ -95,7 +95,7 @@ Use "lh create [command] --help" for more information about a command.
 
 Use `lh delete` to delete Lighthouse resources:
 
-``` shell
+``` no-highlight
 Delete Lighthouse resources
 
 Usage:
@@ -125,7 +125,7 @@ Use "lh delete [command] --help" for more information about a command.
 
 Use `lh get` to retrieve a specific Lighthouse resource:
 
-``` shell
+``` no-highlight
 $ lh get
 Get Lighthouse resources
 
@@ -160,7 +160,7 @@ Use "lh get [command] --help" for more information about a command.
 
 Use `lh list` to list Lighthouse resources:
 
-``` shell
+``` no-highlight
 $ lh list
 List Lighthouse resources
 
@@ -191,7 +191,7 @@ Use "lh list [command] --help" for more information about a command.
 
 Use `lh update` to update a specific Lighthouse resource:
 
-``` shell
+``` no-highlight
 $ lh update
 Update Lighthouse resources
 
@@ -245,36 +245,36 @@ API token and project in the config file.
 
 Create bin `Fred's Open Tickets`:
 
-``` shell
+``` no-highlight
 $ lh create bin --name "Fred's Open Tickets" --query "assigned:fred state:open"
 ```
 
 Delete milestone `v9`:
 
-``` shell
+``` no-highlight
 $ lh delete milestone v9
 ```
 
 Get ticket `2428`:
 
-``` shell
+``` no-highlight
 $ lh get ticket 2428
 ```
 
 Download attachment `bad.conf` from ticket `2428`:
 
-``` shell
+``` no-highlight
 $ lh get ticket 2428 --attachment bad.conf > bad.conf
 ```
 
 List all tickets matching query `milestone:"XYZ v9"`
 
-``` shell
+``` no-highlight
 $ lh list tickets --all --query 'milestone:"XYZ v9"'
 ```
 
 Update ticket `2428`:
 
-``` shell
+``` no-highlight
 $ lh update ticket 2428 --comment "Looks good to me" --state resolved --assigned fred
 ```
