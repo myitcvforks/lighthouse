@@ -45,12 +45,15 @@ specified password has the form '@FILE', the password is instead read
 from FILE.
 
 Many subcommands work on resources that are Lighthouse
-project-specific.  These commands require the project ID to be
+project-specific.  These commands require the project ID or name to be
 specified via -p, --project, the LH_PROJECT environment variable or
 the config file.
 
-The default config file is $HOME/.lh.yaml but can be overridden with
---config.
+On Unix systems, the default config file is $HOME/.lh.yaml.  On
+Windows systems, the default config file is
+%HOMEDRIVE%\%HOMEPATH%\.lh.yaml, falling back to
+%USERPROFILE%\.lh.yaml if necessary.  On all systems, the default can
+be overridden with --config.
 
 `,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
