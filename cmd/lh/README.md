@@ -33,7 +33,7 @@ specified password has the form '@FILE', the password is instead read
 from FILE.
 
 Many subcommands work on resources that are Lighthouse
-project-specific.  These commands require the project ID to be
+project-specific.  These commands require the project ID or name to be
 specified via -p, --project, the LH_PROJECT environment variable or
 the config file.
 
