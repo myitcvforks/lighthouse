@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nwidger/jsoncolor"
 	"github.com/nwidger/lighthouse"
 	"github.com/nwidger/lighthouse/bins"
 	"github.com/nwidger/lighthouse/messages"
@@ -99,11 +100,13 @@ func init() {
 	RootCmd.PersistentFlags().String("email", "", "Lighthouse email (cannot be used with --token)")
 	RootCmd.PersistentFlags().String("password", "", "Lighthouse password (cannot be used with --token)")
 	RootCmd.PersistentFlags().StringP("project", "p", "", "Lighthouse project ID or name")
+	RootCmd.PersistentFlags().BoolP("monochrome", "M", false, "Monochrome (don't colorize JSON)")
 	viper.BindPFlag("account", RootCmd.PersistentFlags().Lookup("account"))
 	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
 	viper.BindPFlag("email", RootCmd.PersistentFlags().Lookup("email"))
 	viper.BindPFlag("password", RootCmd.PersistentFlags().Lookup("password"))
 	viper.BindPFlag("project", RootCmd.PersistentFlags().Lookup("project"))
+	viper.BindPFlag("monochrome", RootCmd.PersistentFlags().Lookup("monochrome"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -124,11 +127,15 @@ func initConfig() {
 }
 
 func JSON(v interface{}) {
-	buf, err := json.MarshalIndent(v, "", "    ")
+	marshalIndent := jsoncolor.MarshalIndent
+	if viper.GetBool("monochrome") {
+		marshalIndent = json.MarshalIndent
+	}
+	buf, err := marshalIndent(v, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(buf))
+	fmt.Print(string(buf))
 }
 
 func Project() int {
