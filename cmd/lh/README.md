@@ -57,6 +57,7 @@ Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
   -h, --help              help for lh
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
@@ -89,6 +90,7 @@ Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
@@ -119,6 +121,7 @@ Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
@@ -154,6 +157,7 @@ Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
@@ -185,6 +189,7 @@ Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
@@ -217,6 +222,7 @@ Global Flags:
   -a, --account string    Lighthouse account name
       --config string     config file (default is $HOME/.lh.yaml)
       --email string      Lighthouse email (cannot be used with --token)
+  -M, --monochrome        Monochrome (don't colorize JSON)
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
   -t, --token string      Lighthouse API token
@@ -237,9 +243,12 @@ project: your-project-name
 
 ## Output
 
-All commands return resources as JSON.  Piping `lh`'s output to a JSON
-processor such as [jq](https://stedolan.github.io/jq/) may be helpful
-to pretty-print the output or retrieve specific fields.
+All commands return resources as JSON.  By default, the output is
+colorized using the [jsoncolor](https://github.com/nwidger/jsoncolor)
+package.  This can be disabled using `-M` or `--monochrome`.  Piping
+`lh`'s output to a JSON processor such as
+[jq](https://stedolan.github.io/jq/) may be helpful to retrieve
+specific fields.
 
 ## Examples
 
