@@ -135,7 +135,7 @@ func JSON(v interface{}) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(string(buf))
+	fmt.Println(string(buf))
 }
 
 func Project() int {
