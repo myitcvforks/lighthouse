@@ -14,8 +14,8 @@ go get -u github.com/nwidger/lighthouse/cmd/gittolh
 ## Usage
 
 The program should be run as a standard post-receive hook with
-arguments `<oldrev> <newrev> <refname>` passed to the program via
-stdin.
+arguments `<oldrev> <newrev> <refname>` passed to the program either
+through command-line arguments or via stdin.
 
 The program expects the Git config entry `lighthouse.account` to
 contain your Lighthouse account name and the Git config entry
