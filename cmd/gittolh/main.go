@@ -182,7 +182,7 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 }
 
 func main() {
-	usage := "<oldrev> <newrev> <refname> via stdin"
+	usage := "<oldrev> <newrev> <refname> via stdin\n"
 
 	if len(os.Args) != 1 {
 		fmt.Fprintf(os.Stderr, usage)
