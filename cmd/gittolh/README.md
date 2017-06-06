@@ -48,4 +48,8 @@ git config lighthouse.keys.susan 0000000000000000000000000000000000000000
 ```
 
 Any errors encountered during execution are appended to the file
-`/tmp/git-hooks.log`.
+`/tmp/git-hooks.log`.  This file is expected to be writeable by all
+users who might be running the post-receive hook.  If the file does
+not exist, it is created with `777` permissions.  You may need to
+modify your umask before running this program to ensure that the file
+is indeed created with write permissions for all appropriate users.
