@@ -89,7 +89,8 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 		commitTime := time.Unix(sec, 0)
 
 		title := fmt.Sprintf("%s committed changeset [%s]", commitAuthor, revision)
-		body := fmt.Sprintf(`
+		body := fmt.Sprintf(`Commit log:
+
 %s
 
 %s`, commitLog, commitDiffStat)
