@@ -183,22 +183,11 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 }
 
 func main() {
-	oldrev, newrev, refname := "", "", ""
 	usage := "<oldrev> <newrev> <refname>"
 
 	if len(os.Args) != 1 && len(os.Args) != 4 {
 		fmt.Fprintf(os.Stderr, "%s\n", usage)
 		os.Exit(1)
-	}
-
-	if len(os.Args) == 4 {
-		oldrev, newrev, refname = os.Args[1], os.Args[2], os.Args[3]
-	} else {
-		n, err := fmt.Fscanf(os.Stdin, "%s %s %s", &oldrev, &newrev, &refname)
-		if err != nil || n != 3 {
-			fmt.Fprintf(os.Stderr, "%s\n", usage)
-			os.Exit(1)
-		}
 	}
 
 	f, err := os.OpenFile("/tmp/git-hooks.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
@@ -210,8 +199,27 @@ func main() {
 	mw := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(mw)
 
-	err = gatherAndPost(oldrev, newrev, refname)
-	if err != nil {
-		log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
+	if len(os.Args) == 4 {
+		oldrev, newrev, refname := os.Args[1], os.Args[2], os.Args[3]
+
+		err = gatherAndPost(oldrev, newrev, refname)
+		if err != nil {
+			log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
+		}
+	} else {
+		oldrev, newrev, refname := "", "", ""
+
+		for {
+			n, err := fmt.Fscanf(os.Stdin, "%s %s %s", &oldrev, &newrev, &refname)
+			if err != nil || n != 3 {
+				break
+			}
+
+			err = gatherAndPost(oldrev, newrev, refname)
+			if err != nil {
+				log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
+			}
+		}
 	}
+
 }
