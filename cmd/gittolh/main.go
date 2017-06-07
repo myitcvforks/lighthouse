@@ -93,7 +93,9 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 
 %s
 
-%s`, commitLog, commitDiffStat)
+@@@
+%s
+@@@`, commitLog, commitDiffStat)
 		if len(gitwebURL) > 0 {
 			body += fmt.Sprintf(`
 [gitweb](%s;a=commit;h=%s)`, gitwebURL, revision)
