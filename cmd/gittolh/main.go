@@ -68,11 +68,54 @@ func runGit(args ...string) (string, error) {
 }
 
 func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, error) {
+	var change, revType, refType string
+
+	oldrev = strings.TrimSpace(mustRunGit("rev-parse", oldrev))
+	newrev = strings.TrimSpace(mustRunGit("rev-parse", newrev))
+
+	switch {
+	case strings.Count(oldrev, "0") == len(oldrev):
+		change = "create"
+	case strings.Count(oldrev, "0") == len(newrev):
+		change = "delete"
+	default:
+		change = "update"
+	}
+
+	switch change {
+	case "create", "update":
+		revType = strings.TrimSpace(mustRunGit("cat-file", "-t", newrev))
+	case "delete":
+		revType = strings.TrimSpace(mustRunGit("cat-file", "-t", oldrev))
+	}
+
+	if strings.HasPrefix(refname, "refs/tags/") && revType == "commit" {
+		refType = "tag"
+	} else if strings.HasPrefix(refname, "refs/tags/") && revType == "tag" {
+		refType = "annotatedTag"
+	} else if strings.HasPrefix(refname, "refs/heads/") && revType == "commit" {
+		refType = "branch"
+	} else if strings.HasPrefix(refname, "refs/remotes/") && revType == "commit" {
+		refType = "trackingBranch"
+	} else {
+		log.Printf("unknown update type %q (%q)", refname, revType)
+		return nil, nil
+	}
+
+	if change == "delete" || refType != "branch" {
+		return nil, nil
+	}
+
+	start, end := oldrev, newrev
+	if change != "update" {
+		start = "HEAD"
+	}
+
 	gitwebURL := getGitwebURL()
 
 	cc := []*changesets.Changeset{}
 
-	commits := strings.TrimSpace(mustRunGit("log", "-s", "--format=%H", fmt.Sprintf("%s..%s", oldrev, newrev)))
+	commits := strings.TrimSpace(mustRunGit("log", "-s", "--format=%H", fmt.Sprintf("%s..%s", start, end)))
 
 	for _, revision := range strings.Split(commits, "\n") {
 		commitAuthor := strings.TrimSpace(mustRunGit("show", "-s", "--format=%an", revision))
@@ -146,6 +189,9 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 	cc, err := createChangesets(oldrev, newrev, refname)
 	if err != nil {
 		return err
+	}
+	if len(cc) == 0 {
+		return nil
 	}
 
 	lt := &lighthouse.Transport{
