@@ -120,9 +120,9 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 	for _, revision := range strings.Split(commits, "\n") {
 		commitAuthor := strings.TrimSpace(mustRunGit("show", "-s", "--format=%an", revision))
 		commitEmail := strings.TrimSpace(mustRunGit("show", "-s", "--format=%ae", revision))
-		commitLog := mustRunGit("show", "-s", "--format=%s%n%n%b", newrev)
+		commitLog := mustRunGit("show", "-s", "--format=%s%n%n%b", revision)
 		commitDiffStat := mustRunGit("diff", "--stat", fmt.Sprintf("%s^..%s", revision, revision))
-		commitDate := mustRunGit("show", "-s", "--format=%at", newrev)
+		commitDate := mustRunGit("show", "-s", "--format=%at", revision)
 		commitChanged := mustRunGit("diff-tree", "-r", "--name-status", "--no-commit-id", revision)
 
 		sec, err := strconv.ParseInt(strings.TrimSpace(commitDate), 10, 64)
@@ -250,6 +250,7 @@ func main() {
 	if len(os.Args) == 4 {
 		oldrev, newrev, refname := os.Args[1], os.Args[2], os.Args[3]
 
+		log.Println(oldrev, newrev, refname)
 		err = gatherAndPost(oldrev, newrev, refname)
 		if err != nil {
 			log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
@@ -263,6 +264,7 @@ func main() {
 				break
 			}
 
+			log.Println(oldrev, newrev, refname)
 			err = gatherAndPost(oldrev, newrev, refname)
 			if err != nil {
 				log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
