@@ -47,6 +47,26 @@ git config lighthouse.keys.bob   0000000000000000000000000000000000000000
 git config lighthouse.keys.susan 0000000000000000000000000000000000000000
 ```
 
+The program also supports an optional Git config entry
+`lighthouse.gitweb-url` which should be the base URL for the Git
+repository in a gitweb instance.  For example, if
+`https://git.example.com?project=example.git` is the base URL to your
+Git repository in a gitweb instance, then `lighthouse.gitweb-url`
+should be configured as follows:
+
+``` no-highlight
+git config lighthouse.gitweb-url https://git.example.com/?project=example.git
+```
+
+If `lighthouse.gitweb-url` is configured, the program will insert a
+Markdown link with the format:
+
+```
+[gitweb](<gitweb-url>;a=commit;h=<commit-hash>
+```
+
+at the bottom of the Lighthouse changeset message for each commit.
+
 Any errors encountered during execution are appended to the file
 `/tmp/git-hooks.log`.  This file is expected to be writeable by all
 users who might be running the post-receive hook.  If the file does
