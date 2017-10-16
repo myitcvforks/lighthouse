@@ -20,11 +20,13 @@ func getAccountAndProject() (string, int, error) {
 	projectStr := strings.TrimSpace(mustRunGit("config", "--get", "lighthouse.project"))
 
 	if len(account) == 0 {
+		log.Printf("gittolh: unable to find Lighthouse account name, please run 'git config lighthouse.account <account-name>' on remote repository")
 		return "", 0, fmt.Errorf("empty account name %q", account)
 	}
 
 	projectID, err := strconv.Atoi(projectStr)
 	if err != nil {
+		log.Printf("gittolh: unable to find Lighthouse project ID, please run 'git config lighthouse.project <project-id>' on remote repository")
 		return "", 0, fmt.Errorf("unable to parse project ID %q", projectStr)
 	}
 
@@ -38,9 +40,10 @@ func getToken(commitEmail string) (string, error) {
 		name = commitEmail[:idx]
 	}
 
-	token := strings.TrimSpace(mustRunGit("config", "--get", fmt.Sprintf("lighthouse.keys.%s", name)))
-
+	token, _ := runGit("config", "--get", fmt.Sprintf("lighthouse.keys.%s", name))
+	token = strings.TrimSpace(token)
 	if len(token) == 0 {
+		log.Printf("gittolh: unable to find Lighthouse token for %s, please run 'git config lighthouse.keys.%s <token>' on remote repository", name, name)
 		return "", fmt.Errorf("unable to find token for %q", name)
 	}
 
@@ -213,13 +216,16 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 		}
 		token, err := getToken(c.Committer)
 		if err != nil {
-			return err
+			continue
 		}
 		tokens[c.Committer] = token
 	}
 
 	for _, c := range cc {
 		lt.Token = tokens[c.Committer]
+		if len(lt.Token) == 0 {
+			continue
+		}
 		c, err = cs.Create(c)
 		if err != nil {
 			return err
