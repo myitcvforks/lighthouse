@@ -16,8 +16,11 @@ import (
 )
 
 func getAccountAndProject() (string, int, error) {
-	account := strings.TrimSpace(mustRunGit("config", "--get", "lighthouse.account"))
-	projectStr := strings.TrimSpace(mustRunGit("config", "--get", "lighthouse.project"))
+	account, _ := runGit("config", "--get", "lighthouse.account")
+	account = strings.TrimSpace(account)
+
+	projectStr, _ := runGit("config", "--get", "lighthouse.project")
+	projectStr = strings.TrimSpace(projectStr)
 
 	if len(account) == 0 {
 		log.Printf("gittolh: unable to find Lighthouse account name, please run 'git config lighthouse.account <account-name>' on remote repository")
