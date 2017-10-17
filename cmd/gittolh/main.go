@@ -74,7 +74,7 @@ func runGit(args ...string) (string, error) {
 }
 
 func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, error) {
-	var change, revType, refType string
+	var change, revType, refType, revSpec string
 
 	oldrev = strings.TrimSpace(mustRunGit("rev-parse", oldrev))
 	newrev = strings.TrimSpace(mustRunGit("rev-parse", newrev))
@@ -112,16 +112,17 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 		return nil, nil
 	}
 
-	revspec := fmt.Sprintf("%s..%s", oldrev, newrev)
 	if change == "create" {
-		revspec = newrev
+		revSpec = newrev
+	} else {
+		revSpec = fmt.Sprintf("%s..%s", oldrev, newrev)
 	}
 
 	gitwebURL := getGitwebURL()
 
 	cc := []*changesets.Changeset{}
 
-	commits := strings.TrimSpace(mustRunGit("log", "-s", "--format=%H", revspec))
+	commits := strings.TrimSpace(mustRunGit("log", "-s", "--format=%H", revSpec))
 
 	for _, revision := range strings.Split(commits, "\n") {
 		commitAuthor := strings.TrimSpace(mustRunGit("show", "-s", "--format=%an", revision))
