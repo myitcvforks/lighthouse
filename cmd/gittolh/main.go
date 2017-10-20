@@ -113,7 +113,7 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 	}
 
 	if change == "create" {
-		revSpec = newrev
+		revSpec = fmt.Sprintf("HEAD..%s", newrev)
 	} else {
 		revSpec = fmt.Sprintf("%s..%s", oldrev, newrev)
 	}
