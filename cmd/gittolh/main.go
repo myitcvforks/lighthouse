@@ -260,10 +260,10 @@ func main() {
 	if len(os.Args) == 4 {
 		oldrev, newrev, refname := os.Args[1], os.Args[2], os.Args[3]
 
-		log.Println(oldrev, newrev, refname)
+		fmt.Fprintln(f, oldrev, newrev, refname)
 		err = gatherAndPost(oldrev, newrev, refname)
 		if err != nil {
-			log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
+			fmt.Fprintf(f, "%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
 		}
 	} else {
 		oldrev, newrev, refname := "", "", ""
@@ -274,10 +274,10 @@ func main() {
 				break
 			}
 
-			log.Println(oldrev, newrev, refname)
+			fmt.Fprintln(f, oldrev, newrev, refname)
 			err = gatherAndPost(oldrev, newrev, refname)
 			if err != nil {
-				log.Fatalf("%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
+				fmt.Fprintf(f, "%s %s %s: %s\n", oldrev, newrev, refname, err.Error())
 			}
 		}
 	}
