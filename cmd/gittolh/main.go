@@ -53,10 +53,12 @@ func getToken(commitEmail string) (string, error) {
 	return token, nil
 }
 
-func getGitwebURL() string {
-	gitwebURL, _ := runGit("config", "--get", "lighthouse.gitweb-url")
-	gitwebURL = strings.TrimSpace(gitwebURL)
-	return gitwebURL
+func getFooter() string {
+	footer, err := runGit("config", "--get", "lighthouse.footer")
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(footer)
 }
 
 func mustRunGit(args ...string) string {
@@ -118,7 +120,7 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 		revSpec = fmt.Sprintf("%s..%s", oldrev, newrev)
 	}
 
-	gitwebURL := getGitwebURL()
+	footer := getFooter()
 
 	cc := []*changesets.Changeset{}
 
@@ -146,9 +148,11 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 @@@
 %s
 @@@`, commitLog, commitDiffStat)
-		if len(gitwebURL) > 0 {
-			body += fmt.Sprintf(`
-[gitweb](%s;a=commit;h=%s)`, gitwebURL, revision)
+		if len(footer) > 0 {
+			if strings.Contains(footer, "%s") {
+				footer = strings.Replace(footer, "%s", revision, 1)
+			}
+			body += "\n\n" + footer
 		}
 
 		c := &changesets.Changeset{
