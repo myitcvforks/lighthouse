@@ -229,7 +229,9 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 		tokens[c.Committer] = token
 	}
 
-	for _, c := range cc {
+	// iterate list in reverse so older changes are posted first
+	for i := len(cc) - 1; i >= 0; i = i - 1 {
+		c := cc[i]
 		lt.Token = tokens[c.Committer]
 		if len(lt.Token) == 0 {
 			continue
