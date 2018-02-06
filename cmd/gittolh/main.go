@@ -240,7 +240,6 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 		if err != nil {
 			return err
 		}
-		<-time.After(500 * time.Millisecond)
 	}
 
 	return nil
