@@ -151,7 +151,7 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 		if len(footer) > 0 {
 			ftr := footer
 			if strings.Contains(ftr, "%s") {
-				f = strings.Replace(ftr, "%s", revision, 1)
+				ftr = strings.Replace(ftr, "%s", revision, 1)
 			}
 			body += "\n\n" + ftr
 		}
