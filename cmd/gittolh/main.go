@@ -149,10 +149,11 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 %s
 @@@`, commitLog, commitDiffStat)
 		if len(footer) > 0 {
-			if strings.Contains(footer, "%s") {
-				footer = strings.Replace(footer, "%s", revision, 1)
+			ftr := footer
+			if strings.Contains(ftr, "%s") {
+				f = strings.Replace(ftr, "%s", revision, 1)
 			}
-			body += "\n\n" + footer
+			body += "\n\n" + ftr
 		}
 
 		c := &changesets.Changeset{
