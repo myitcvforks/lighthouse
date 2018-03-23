@@ -230,6 +230,8 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 		tokens[c.Committer] = token
 	}
 
+	err = nil
+
 	// iterate list in reverse so older changes are posted first
 	for i := len(cc) - 1; i >= 0; i = i - 1 {
 		c := cc[i]
@@ -238,12 +240,9 @@ func gatherAndPost(oldrev, newrev, refname string) error {
 			continue
 		}
 		c, err = cs.Create(c)
-		if err != nil {
-			return err
-		}
 	}
 
-	return nil
+	return err
 }
 
 func main() {
