@@ -15,11 +15,7 @@ var binCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply bin ID or name")
 		}
-		binID, err := BinID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		bin, err := b.Get(binID)
+		bin, err := b.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

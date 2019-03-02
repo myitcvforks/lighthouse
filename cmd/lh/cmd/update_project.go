@@ -26,11 +26,7 @@ var updateProjectCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply project ID or name")
 		}
-		projectID, err := ProjectID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		project, err := p.Get(projectID)
+		project, err := p.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -53,7 +49,7 @@ var updateProjectCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
-		project, err = p.Get(projectID)
+		project, err = p.GetByID(project.ID)
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

@@ -7,15 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/nwidger/jsoncolor"
 	"github.com/nwidger/lighthouse"
-	"github.com/nwidger/lighthouse/bins"
-	"github.com/nwidger/lighthouse/messages"
 	"github.com/nwidger/lighthouse/milestones"
 	"github.com/nwidger/lighthouse/projects"
+	"github.com/nwidger/lighthouse/users"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -150,173 +148,32 @@ func Project() int {
 	return projectID
 }
 
-func Users() (map[string]*projects.User, error) {
-	projectID := Project()
-	p := projects.NewService(service)
-	ms, err := p.Memberships(projectID)
-	if err != nil {
-		return nil, err
-	}
-	userMap := map[string]*projects.User{}
-	for _, m := range ms {
-		lower := strings.ToLower(m.User.Name)
-		userMap[lower] = m.User
-		idx := strings.Index(lower, " ")
-		if idx != -1 {
-			firstName := lower[:idx]
-			if firstName != lower {
-				userMap[firstName] = m.User
-				userMap[strings.ToLower(firstName)] = m.User
-			}
-		}
-	}
-	return userMap, nil
-}
-
 func UserID(userStr string) (int, error) {
-	id, err := strconv.ParseInt(userStr, 10, 64)
-	if err == nil {
-		return int(id), nil
-	}
-	us, err := Users()
+	s := users.NewService(service)
+	u, err := s.Get(userStr)
 	if err != nil {
 		return 0, err
-	}
-	u, ok := us[strings.ToLower(userStr)]
-	if !ok {
-		return 0, fmt.Errorf("no such user %q", userStr)
 	}
 	return u.ID, nil
 }
 
-func Milestones() (map[string]*milestones.Milestone, error) {
-	projectID := Project()
-	m := milestones.NewService(service, projectID)
-	ms, err := m.ListAll(&milestones.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	milestonesMap := map[string]*milestones.Milestone{}
-	for _, milestone := range ms {
-		milestonesMap[strings.ToLower(milestone.Title)] = milestone
-	}
-	return milestonesMap, nil
-}
-
 func MilestoneID(milestoneStr string) (int, error) {
-	id, err := strconv.ParseInt(milestoneStr, 10, 64)
-	if err == nil {
-		return int(id), nil
-	}
-	ms, err := Milestones()
+	projectID := Project()
+	s := milestones.NewService(service, projectID)
+	m, err := s.Get(milestoneStr)
 	if err != nil {
 		return 0, err
 	}
-	m, ok := ms[strings.ToLower(milestoneStr)]
-	if !ok {
-		return 0, fmt.Errorf("no such milestone %q", milestoneStr)
-	}
 	return m.ID, nil
-}
-
-func Projects() (map[string]*projects.Project, error) {
-	p := projects.NewService(service)
-	ps, err := p.List()
-	if err != nil {
-		return nil, err
-	}
-	projectsMap := map[string]*projects.Project{}
-	for _, project := range ps {
-		projectsMap[strings.ToLower(project.Name)] = project
-	}
-	return projectsMap, nil
 }
 
 func ProjectID(projectStr string) (int, error) {
-	id, err := strconv.ParseInt(projectStr, 10, 64)
-	if err == nil {
-		return int(id), nil
-	}
-	ps, err := Projects()
+	s := projects.NewService(service)
+	p, err := s.Get(projectStr)
 	if err != nil {
 		return 0, err
-	}
-	p, ok := ps[strings.ToLower(projectStr)]
-	if !ok {
-		return 0, fmt.Errorf("no such project %q", projectStr)
 	}
 	return p.ID, nil
-}
-
-func Bins() (map[string]*bins.Bin, error) {
-	projectID := Project()
-	m := bins.NewService(service, projectID)
-	ms, err := m.List()
-	if err != nil {
-		return nil, err
-	}
-	binsMap := map[string]*bins.Bin{}
-	for _, bin := range ms {
-		binsMap[strings.ToLower(bin.Name)] = bin
-	}
-	return binsMap, nil
-}
-
-func BinID(binStr string) (int, error) {
-	id, err := strconv.ParseInt(binStr, 10, 64)
-	if err == nil {
-		return int(id), nil
-	}
-	ms, err := Bins()
-	if err != nil {
-		return 0, err
-	}
-	m, ok := ms[strings.ToLower(binStr)]
-	if !ok {
-		return 0, fmt.Errorf("no such bin %q", binStr)
-	}
-	return m.ID, nil
-}
-
-func Messages() (map[string]*messages.Message, error) {
-	projectID := Project()
-	m := messages.NewService(service, projectID)
-	ms, err := m.List()
-	if err != nil {
-		return nil, err
-	}
-	messagesMap := map[string]*messages.Message{}
-	for _, message := range ms {
-		messagesMap[strings.ToLower(message.Title)] = message
-	}
-	return messagesMap, nil
-}
-
-func MessageID(messageStr string) (int, error) {
-	id, err := strconv.ParseInt(messageStr, 10, 64)
-	if err == nil {
-		return int(id), nil
-	}
-	ms, err := Messages()
-	if err != nil {
-		return 0, err
-	}
-	m, ok := ms[strings.ToLower(messageStr)]
-	if !ok {
-		return 0, fmt.Errorf("no such message %q", messageStr)
-	}
-	return m.ID, nil
-}
-
-func TicketID(numberStr string) (int, error) {
-	if strings.HasPrefix(numberStr, "#") {
-		numberStr = numberStr[1:]
-	}
-	number, err := strconv.ParseInt(numberStr, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("invalid ticket number %q", numberStr)
-	}
-	return int(number), nil
 }
 
 func FatalUsage(cmd *cobra.Command, v ...interface{}) {

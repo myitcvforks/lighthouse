@@ -5,9 +5,11 @@ package bins
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nwidger/lighthouse"
@@ -110,7 +112,15 @@ func (s *Service) List() (Bins, error) {
 	return bsresp.bins(), nil
 }
 
-func (s *Service) Get(id int) (*Bin, error) {
+func (s *Service) Get(idOrName string) (*Bin, error) {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.GetByID(id)
+	}
+	return s.GetByName(idOrName)
+}
+
+func (s *Service) GetByID(id int) (*Bin, error) {
 	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return nil, err
@@ -129,6 +139,20 @@ func (s *Service) Get(id int) (*Bin, error) {
 	}
 
 	return bresp.Bin, nil
+}
+
+func (s *Service) GetByName(name string) (*Bin, error) {
+	bs, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+	lower := strings.ToLower(name)
+	for _, b := range bs {
+		if strings.ToLower(b.Name) == lower {
+			return b, nil
+		}
+	}
+	return nil, fmt.Errorf("no such bin %q", name)
 }
 
 // Only the fields in BinCreate can be set.
@@ -199,7 +223,15 @@ func (s *Service) Update(b *Bin) error {
 	return nil
 }
 
-func (s *Service) Delete(id int) error {
+func (s *Service) Delete(idOrName string) error {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.DeleteByID(id)
+	}
+	return s.DeleteByName(idOrName)
+}
+
+func (s *Service) DeleteByID(id int) error {
 	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
@@ -212,4 +244,12 @@ func (s *Service) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (s *Service) DeleteByName(name string) error {
+	b, err := s.GetByName(name)
+	if err != nil {
+		return err
+	}
+	return s.DeleteByID(b.ID)
 }

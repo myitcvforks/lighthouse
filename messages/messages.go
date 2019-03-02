@@ -5,9 +5,11 @@ package messages
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nwidger/lighthouse"
@@ -186,8 +188,30 @@ func (s *Service) Update(m *Message) error {
 	return nil
 }
 
-func (s *Service) Get(id int) (*Message, error) {
+func (s *Service) Get(idOrTitle string) (*Message, error) {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.GetByID(id)
+	}
+	return s.GetByTitle(idOrTitle)
+}
+
+func (s *Service) GetByID(id int) (*Message, error) {
 	return s.get(strconv.Itoa(id))
+}
+
+func (s *Service) GetByTitle(title string) (*Message, error) {
+	ms, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+	lower := strings.ToLower(title)
+	for _, m := range ms {
+		if strings.ToLower(m.Title) == lower {
+			return m, nil
+		}
+	}
+	return nil, fmt.Errorf("no such message %q", title)
 }
 
 func (s *Service) get(id string) (*Message, error) {
@@ -249,7 +273,16 @@ func (s *Service) Create(m *Message) (*Message, error) {
 }
 
 // Only the fields in CommentCreate can be set.
-func (s *Service) CreateComment(id int, c *Comment) (*Message, error) {
+func (s *Service) CreateComment(idOrTitle string, c *Comment) (*Message, error) {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.CreateCommentByID(id, c)
+	}
+	return s.CreateCommentByTitle(idOrTitle, c)
+}
+
+// Only the fields in CommentCreate can be set.
+func (s *Service) CreateCommentByID(id int, c *Comment) (*Message, error) {
 	creq := &commentRequest{
 		Comment: &CommentCreate{
 			Body:  c.Body,
@@ -286,7 +319,24 @@ func (s *Service) CreateComment(id int, c *Comment) (*Message, error) {
 	return m, nil
 }
 
-func (s *Service) Delete(id int) error {
+// Only the fields in CommentCreate can be set.
+func (s *Service) CreateCommentByTitle(title string, c *Comment) (*Message, error) {
+	m, err := s.GetByTitle(title)
+	if err != nil {
+		return nil, err
+	}
+	return s.CreateCommentByID(m.ID, c)
+}
+
+func (s *Service) Delete(idOrTitle string) error {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.DeleteByID(id)
+	}
+	return s.DeleteByTitle(idOrTitle)
+}
+
+func (s *Service) DeleteByID(id int) error {
 	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
@@ -299,4 +349,12 @@ func (s *Service) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (s *Service) DeleteByTitle(title string) error {
+	m, err := s.GetByTitle(title)
+	if err != nil {
+		return err
+	}
+	return s.DeleteByID(m.ID)
 }

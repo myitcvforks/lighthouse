@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"path/filepath"
+	"strconv"
 )
 
 const (
@@ -296,4 +297,12 @@ func CheckResponse(resp *http.Response, expected int) error {
 		return newErrUnexpectedResponse(resp, expected)
 	}
 	return nil
+}
+
+func ID(idStr string) (int, error) {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid id %q", idStr)
+	}
+	return int(id), nil
 }

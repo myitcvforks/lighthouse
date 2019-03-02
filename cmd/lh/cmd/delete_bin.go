@@ -15,11 +15,7 @@ var deleteBinCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply bin ID or name")
 		}
-		binID, err := BinID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		err = b.Delete(binID)
+		err := b.Delete(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

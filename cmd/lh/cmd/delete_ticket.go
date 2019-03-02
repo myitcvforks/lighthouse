@@ -15,11 +15,7 @@ var deleteTicketCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply ticket number")
 		}
-		number, err := TicketID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		err = t.Delete(number)
+		err := t.Delete(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

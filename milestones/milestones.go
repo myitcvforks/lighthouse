@@ -6,10 +6,12 @@ package milestones
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nwidger/lighthouse"
@@ -198,8 +200,30 @@ func (s *Service) Update(m *Milestone) error {
 	return nil
 }
 
-func (s *Service) Get(id int) (*Milestone, error) {
+func (s *Service) Get(idOrTitle string) (*Milestone, error) {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.GetByID(id)
+	}
+	return s.GetByTitle(idOrTitle)
+}
+
+func (s *Service) GetByID(id int) (*Milestone, error) {
 	return s.get(strconv.Itoa(id))
+}
+
+func (s *Service) GetByTitle(title string) (*Milestone, error) {
+	ms, err := s.ListAll(&ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	lower := strings.ToLower(title)
+	for _, m := range ms {
+		if strings.ToLower(m.Title) == lower {
+			return m, nil
+		}
+	}
+	return nil, fmt.Errorf("no such milestone %q", title)
 }
 
 func (s *Service) get(id string) (*Milestone, error) {
@@ -261,7 +285,15 @@ func (s *Service) Create(m *Milestone) (*Milestone, error) {
 	return m, nil
 }
 
-func (s *Service) Close(id int) error {
+func (s *Service) Close(idOrTitle string) error {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.CloseByID(id)
+	}
+	return s.CloseByTitle(idOrTitle)
+}
+
+func (s *Service) CloseByID(id int) error {
 	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/close.json", nil)
 	if err != nil {
 		return err
@@ -276,7 +308,23 @@ func (s *Service) Close(id int) error {
 	return nil
 }
 
-func (s *Service) Open(id int) error {
+func (s *Service) CloseByTitle(title string) error {
+	m, err := s.GetByTitle(title)
+	if err != nil {
+		return err
+	}
+	return s.CloseByID(m.ID)
+}
+
+func (s *Service) Open(idOrTitle string) error {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.OpenByID(id)
+	}
+	return s.OpenByTitle(idOrTitle)
+}
+
+func (s *Service) OpenByID(id int) error {
 	resp, err := s.s.RoundTrip("PUT", s.basePath+"/"+strconv.Itoa(id)+"/open.json", nil)
 	if err != nil {
 		return err
@@ -291,7 +339,23 @@ func (s *Service) Open(id int) error {
 	return nil
 }
 
-func (s *Service) Delete(id int) error {
+func (s *Service) OpenByTitle(title string) error {
+	m, err := s.GetByTitle(title)
+	if err != nil {
+		return err
+	}
+	return s.OpenByID(m.ID)
+}
+
+func (s *Service) Delete(idOrTitle string) error {
+	id, err := lighthouse.ID(idOrTitle)
+	if err == nil {
+		return s.DeleteByID(id)
+	}
+	return s.DeleteByTitle(idOrTitle)
+}
+
+func (s *Service) DeleteByID(id int) error {
 	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
@@ -304,4 +368,12 @@ func (s *Service) Delete(id int) error {
 	}
 
 	return nil
+}
+
+func (s *Service) DeleteByTitle(title string) error {
+	m, err := s.GetByTitle(title)
+	if err != nil {
+		return err
+	}
+	return s.DeleteByID(m.ID)
 }

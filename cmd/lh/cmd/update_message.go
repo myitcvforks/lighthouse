@@ -24,11 +24,7 @@ var updateMessageCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply message ID or title")
 		}
-		messageID, err := MessageID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		message, err := m.Get(messageID)
+		message, err := m.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -42,7 +38,7 @@ var updateMessageCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
-		message, err = m.Get(messageID)
+		message, err = m.GetByID(message.ID)
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

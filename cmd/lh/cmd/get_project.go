@@ -21,18 +21,14 @@ var projectCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply project ID or name")
 		}
-		projectID, err := ProjectID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
 		if flags.memberships {
-			ms, err := p.Memberships(projectID)
+			ms, err := p.Memberships(args[0])
 			if err != nil {
 				FatalUsage(cmd, err)
 			}
 			JSON(ms)
 		} else {
-			project, err := p.Get(projectID)
+			project, err := p.Get(args[0])
 			if err != nil {
 				FatalUsage(cmd, err)
 			}

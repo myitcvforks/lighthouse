@@ -394,7 +394,16 @@ func (s *Service) New() (*Ticket, error) {
 	return s.get("new")
 }
 
-func (s *Service) Get(number int) (*Ticket, error) {
+// Get ticket using ticket number string, possibly prefixed by #
+func (s *Service) Get(numberStr string) (*Ticket, error) {
+	number, err := Number(numberStr)
+	if err != nil {
+		return nil, err
+	}
+	return s.GetByNumber(number)
+}
+
+func (s *Service) GetByNumber(number int) (*Ticket, error) {
 	return s.get(strconv.Itoa(number))
 }
 
@@ -460,7 +469,16 @@ func (s *Service) Create(t *Ticket) (*Ticket, error) {
 	return t, nil
 }
 
-func (s *Service) Delete(number int) error {
+// Delete ticket using ticket number string, possibly prefixed by #
+func (s *Service) Delete(numberStr string) error {
+	number, err := Number(numberStr)
+	if err != nil {
+		return err
+	}
+	return s.DeleteByNumber(number)
+}
+
+func (s *Service) DeleteByNumber(number int) error {
 	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(number)+".json", nil)
 	if err != nil {
 		return err
@@ -592,4 +610,17 @@ func (s *Service) BulkEdit(opts *BulkEditOptions) error {
 	}
 
 	return nil
+}
+
+// Return ticket number from string, possibly prefixed with #
+func Number(numberStr string) (int, error) {
+	str := numberStr
+	if strings.HasPrefix(str, "#") {
+		str = str[1:]
+	}
+	number, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		return 0, fmt.Errorf("invalid ticket number %q", numberStr)
+	}
+	return int(number), nil
 }

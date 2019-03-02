@@ -15,11 +15,7 @@ var messageCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply message ID or title")
 		}
-		msgID, err := MessageID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		msg, err := m.Get(msgID)
+		msg, err := m.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

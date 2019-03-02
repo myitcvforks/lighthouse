@@ -32,11 +32,7 @@ var updateTicketCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply ticket number")
 		}
-		number, err := TicketID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		tkt, err := t.Get(number)
+		tkt, err := t.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -79,7 +75,7 @@ var updateTicketCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
-		tkt, err = t.Get(number)
+		tkt, err = t.GetByNumber(tkt.Number)
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

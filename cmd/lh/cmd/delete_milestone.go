@@ -15,11 +15,7 @@ var deleteMilestoneCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply milestone ID or title")
 		}
-		milestoneID, err := MilestoneID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		err = m.Delete(milestoneID)
+		err := m.Delete(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

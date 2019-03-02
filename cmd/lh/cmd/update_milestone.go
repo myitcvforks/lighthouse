@@ -29,11 +29,7 @@ var updateMilestoneCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply milestone ID or title")
 		}
-		milestoneID, err := MilestoneID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		milestone, err := m.Get(milestoneID)
+		milestone, err := m.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -55,18 +51,18 @@ var updateMilestoneCmd = &cobra.Command{
 			FatalUsage(cmd, err)
 		}
 		if flags.close {
-			err = m.Close(milestoneID)
+			err = m.CloseByID(milestone.ID)
 			if err != nil {
 				FatalUsage(cmd, err)
 			}
 		}
 		if flags.open {
-			err = m.Open(milestoneID)
+			err = m.OpenByID(milestone.ID)
 			if err != nil {
 				FatalUsage(cmd, err)
 			}
 		}
-		milestone, err = m.Get(milestoneID)
+		milestone, err = m.GetByID(milestone.ID)
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

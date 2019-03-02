@@ -15,11 +15,7 @@ var deleteMessageCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply message ID or title")
 		}
-		messageID, err := MessageID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		err = m.Delete(messageID)
+		err := m.Delete(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

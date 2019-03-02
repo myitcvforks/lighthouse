@@ -15,11 +15,7 @@ var milestoneCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply milestone ID or title")
 		}
-		milestoneID, err := MilestoneID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		milestone, err := m.Get(milestoneID)
+		milestone, err := m.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

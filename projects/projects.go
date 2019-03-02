@@ -194,8 +194,30 @@ func (s *Service) List() (Projects, error) {
 	return psresp.projects(), nil
 }
 
-func (s *Service) Get(id int) (*Project, error) {
+func (s *Service) Get(idOrName string) (*Project, error) {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.GetByID(id)
+	}
+	return s.GetByName(idOrName)
+}
+
+func (s *Service) GetByID(id int) (*Project, error) {
 	return s.get(strconv.Itoa(id))
+}
+
+func (s *Service) GetByName(name string) (*Project, error) {
+	ps, err := s.List()
+	if err != nil {
+		return nil, err
+	}
+	lower := strings.ToLower(name)
+	for _, p := range ps {
+		if lower == strings.ToLower(p.Name) {
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("no such project %q", name)
 }
 
 func (s *Service) New() (*Project, error) {
@@ -291,7 +313,15 @@ func (s *Service) Update(p *Project) error {
 	return nil
 }
 
-func (s *Service) Delete(id int) error {
+func (s *Service) Delete(idOrName string) error {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.DeleteByID(id)
+	}
+	return s.DeleteByName(idOrName)
+}
+
+func (s *Service) DeleteByID(id int) error {
 	resp, err := s.s.RoundTrip("DELETE", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return err
@@ -306,7 +336,31 @@ func (s *Service) Delete(id int) error {
 	return nil
 }
 
-func (s *Service) Memberships(id int) (Memberships, error) {
+func (s *Service) DeleteByName(name string) error {
+	p, err := s.GetByName(name)
+	if err != nil {
+		return err
+	}
+	return s.DeleteByID(p.ID)
+}
+
+func (s *Service) Memberships(idOrName string) (Memberships, error) {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.MembershipsByID(id)
+	}
+	return s.MembershipsByName(idOrName)
+}
+
+func (s *Service) MembershipsByName(name string) (Memberships, error) {
+	p, err := s.GetByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.MembershipsByID(p.ID)
+}
+
+func (s *Service) MembershipsByID(id int) (Memberships, error) {
 	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+"/memberships.json", nil)
 	if err != nil {
 		return nil, err

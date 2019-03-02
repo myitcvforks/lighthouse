@@ -23,11 +23,7 @@ var updateUserCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply user ID or name")
 		}
-		userID, err := UserID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		user, err := u.Get(userID)
+		user, err := u.Get(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
@@ -44,7 +40,7 @@ var updateUserCmd = &cobra.Command{
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
-		user, err = u.Get(userID)
+		user, err = u.GetByID(user.ID)
 		if err != nil {
 			FatalUsage(cmd, err)
 		}

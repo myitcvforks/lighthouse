@@ -21,18 +21,14 @@ var userCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply user ID or name")
 		}
-		userID, err := UserID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
 		if flags.memberships {
-			memberships, err := u.Memberships(userID)
+			memberships, err := u.Memberships(args[0])
 			if err != nil {
 				FatalUsage(cmd, err)
 			}
 			JSON(memberships)
 		} else {
-			user, err := u.Get(userID)
+			user, err := u.Get(args[0])
 			if err != nil {
 				FatalUsage(cmd, err)
 			}

@@ -9,9 +9,11 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nwidger/lighthouse"
+	"github.com/nwidger/lighthouse/projects"
 )
 
 type Service struct {
@@ -160,7 +162,15 @@ func (ur *userResponse) decode(r io.Reader) error {
 	return dec.Decode(ur)
 }
 
-func (s *Service) Get(id int) (*User, error) {
+func (s *Service) Get(idOrName string) (*User, error) {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.GetByID(id)
+	}
+	return s.GetByName(idOrName)
+}
+
+func (s *Service) GetByID(id int) (*User, error) {
 	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+".json", nil)
 	if err != nil {
 		return nil, err
@@ -179,6 +189,40 @@ func (s *Service) Get(id int) (*User, error) {
 	}
 
 	return uresp.User, nil
+}
+
+func (s *Service) GetByName(name string) (*User, error) {
+	seen := map[int]struct{}{}
+	projectService := projects.NewService(s.s)
+	ps, err := projectService.List()
+	if err != nil {
+		return nil, err
+	}
+	lower := strings.ToLower(name)
+	for _, p := range ps {
+		ms, err := projectService.MembershipsByID(p.ID)
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range ms {
+			if _, ok := seen[m.User.ID]; ok {
+				continue
+			}
+			seen[m.User.ID] = struct{}{}
+			fullName := strings.ToLower(m.User.Name)
+			firstName := fullName
+			idx := strings.Index(fullName, " ")
+			if idx != -1 {
+				firstName = fullName[:idx]
+			}
+			switch {
+			case fullName == lower, firstName == lower:
+				return s.GetByID(m.User.ID)
+			}
+
+		}
+	}
+	return nil, fmt.Errorf("no such user %q", name)
 }
 
 // Only the fields in UserUpdate can be set.
@@ -212,7 +256,15 @@ func (s *Service) Update(u *User) error {
 	return nil
 }
 
-func (s *Service) Memberships(id int) (Memberships, error) {
+func (s *Service) Memberships(idOrName string) (Memberships, error) {
+	id, err := lighthouse.ID(idOrName)
+	if err == nil {
+		return s.MembershipsByID(id)
+	}
+	return s.MembershipsByName(idOrName)
+}
+
+func (s *Service) MembershipsByID(id int) (Memberships, error) {
 	resp, err := s.s.RoundTrip("GET", s.basePath+"/"+strconv.Itoa(id)+"/memberships.json", nil)
 	if err != nil {
 		return nil, err
@@ -231,4 +283,12 @@ func (s *Service) Memberships(id int) (Memberships, error) {
 	}
 
 	return usresp.memberships(), nil
+}
+
+func (s *Service) MembershipsByName(name string) (Memberships, error) {
+	u, err := s.GetByName(name)
+	if err != nil {
+		return nil, err
+	}
+	return s.MembershipsByID(u.ID)
 }

@@ -14,11 +14,7 @@ var deleteProjectCmd = &cobra.Command{
 		if len(args) == 0 {
 			FatalUsage(cmd, "must supply project ID or name")
 		}
-		projectID, err := ProjectID(args[0])
-		if err != nil {
-			FatalUsage(cmd, err)
-		}
-		err = p.Delete(projectID)
+		err := p.Delete(args[0])
 		if err != nil {
 			FatalUsage(cmd, err)
 		}
