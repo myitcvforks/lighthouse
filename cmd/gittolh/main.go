@@ -76,45 +76,49 @@ func runGit(args ...string) (string, error) {
 }
 
 func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, error) {
-	var change, revType, refType, revSpec string
+	var change, revType, refType, refShortName, revSpec string
 
 	oldrev = strings.TrimSpace(mustRunGit("rev-parse", oldrev))
 	newrev = strings.TrimSpace(mustRunGit("rev-parse", newrev))
 
 	switch {
 	case strings.Count(oldrev, "0") == len(oldrev):
-		change = "create"
+		change = "created"
 	case strings.Count(oldrev, "0") == len(newrev):
-		change = "delete"
+		change = "deleted"
 	default:
-		change = "update"
+		change = "updated"
 	}
 
 	switch change {
-	case "create", "update":
+	case "created", "updated":
 		revType = strings.TrimSpace(mustRunGit("cat-file", "-t", newrev))
-	case "delete":
+	case "deleted":
 		revType = strings.TrimSpace(mustRunGit("cat-file", "-t", oldrev))
 	}
 
 	if strings.HasPrefix(refname, "refs/tags/") && revType == "commit" {
 		refType = "tag"
+		refShortName = strings.TrimPrefix(refname, "refs/tags/")
 	} else if strings.HasPrefix(refname, "refs/tags/") && revType == "tag" {
-		refType = "annotatedTag"
+		refType = "annotated tag"
+		refShortName = strings.TrimPrefix(refname, "refs/tags/")
 	} else if strings.HasPrefix(refname, "refs/heads/") && revType == "commit" {
 		refType = "branch"
+		refShortName = strings.TrimPrefix(refname, "refs/heads/")
 	} else if strings.HasPrefix(refname, "refs/remotes/") && revType == "commit" {
-		refType = "trackingBranch"
+		refType = "tracking branch"
+		refShortName = strings.TrimPrefix(refname, "refs/remotes/")
 	} else {
 		log.Printf("unknown update type %q (%q)", refname, revType)
 		return nil, nil
 	}
 
-	if change == "delete" || refType != "branch" {
+	if change == "deleted" || refType != "branch" {
 		return nil, nil
 	}
 
-	if change == "create" {
+	if change == "created" {
 		revSpec = fmt.Sprintf("HEAD..%s", newrev)
 	} else {
 		revSpec = fmt.Sprintf("%s..%s", oldrev, newrev)
@@ -140,14 +144,14 @@ func createChangesets(oldrev, newrev, refname string) ([]*changesets.Changeset, 
 		}
 		commitTime := time.Unix(sec, 0)
 
-		title := fmt.Sprintf("%s committed changeset [%s]", commitAuthor, revision)
-		body := fmt.Sprintf(`Commit log:
+		title := fmt.Sprintf("%s committed changeset [%s] which %s %s %s", commitAuthor, revision, change, refType, refShortName)
+		body := fmt.Sprintf(`%s %s %s:
 
 %s
 
 @@@
 %s
-@@@`, commitLog, commitDiffStat)
+@@@`, strings.Title(change), refType, refShortName, commitLog, commitDiffStat)
 		if len(footer) > 0 {
 			ftr := footer
 			if strings.Contains(ftr, "%s") {
