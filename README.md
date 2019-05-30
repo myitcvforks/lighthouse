@@ -24,9 +24,17 @@ import "github.com/nwidger/lighthouse"
 // API token.
 client := lighthouse.NewClient("your-api-token")
 
+// Or create an *http.Client which will authenticate with your Lighthouse
+// API token and automatically rate limit API requests.
+client := lighthouse.NewClientWithRateLimit("your-api-token")
+
 // Or create an *http.Client which will authenticate with your
 // Lighthouse email/password.
 client := lighthouse.NewClientBasicAuth("your-email", "your-password")
+
+// Or create an *http.Client which will authenticate with your
+// Lighthouse email/password and automatically rate limit API requests.
+client := lighthouse.NewClientBasicAuthWithRateLimit("your-email", "your-password")
 
 // Create a *lighthouse.Service with your Lighthouse account and client.
 // 'https://your-account-name.lighthouseapp.com'.

@@ -3,6 +3,7 @@
 package lighthouse
 
 import (
+	"context"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -11,10 +12,21 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"time"
+
+	"golang.org/x/time/rate"
 )
 
 const (
 	StatusUnprocessableEntity = 422
+
+	// DefaultRateLimitInterval controls the default rate limit
+	// interval
+	DefaultRateLimitInterval = 100 * time.Millisecond
+
+	// DefaultRateLimitBurstSize control the default rate Limit
+	// burst size
+	DefaultRateLimitBurstSize = 1
 )
 
 // Transport wraps another http.RoundTripper and ensures the outgoing
@@ -39,6 +51,25 @@ type Transport struct {
 	// requests are made.  If Base is nil, http.DefaultTransport
 	// is used.
 	Base http.RoundTripper
+
+	// RateLimitInterval controls the rate limit interval using a
+	// token bucket.  If not set no rate limiting will occur.  See
+	// https://en.wikipedia.org/wiki/Token_bucket for more about
+	// token buckets.
+	RateLimitInterval time.Duration
+	// RateLimitBurstSize controls the rate limit burst size.  If
+	// RateLimitInterval is not set, RateLimitBurstSize is
+	// ignored.
+	RateLimitBurstSize int
+
+	limiter *rate.Limiter
+}
+
+func (t *Transport) rateLimiter() *rate.Limiter {
+	if t.limiter == nil && t.RateLimitInterval != time.Duration(0) {
+		t.limiter = newLimiter(t.RateLimitInterval, t.RateLimitBurstSize)
+	}
+	return t.limiter
 }
 
 func (t *Transport) base() http.RoundTripper {
@@ -65,6 +96,15 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		req2.SetBasicAuth(t.Email, t.Password)
 	}
 
+	rateLimiter := t.rateLimiter()
+
+	if rateLimiter != nil {
+		err := rateLimiter.Wait(context.Background())
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return t.base().RoundTrip(req2)
 }
 
@@ -82,10 +122,24 @@ func cloneRequest(r *http.Request) *http.Request {
 	return r2
 }
 
+func newLimiter(interval time.Duration, b int) *rate.Limiter {
+	return rate.NewLimiter(rate.Every(interval), b)
+}
+
 func NewClient(token string) *http.Client {
 	return &http.Client{
 		Transport: &Transport{
 			Token: token,
+		},
+	}
+}
+
+func NewClientWithRateLimit(token string) *http.Client {
+	return &http.Client{
+		Transport: &Transport{
+			Token:              token,
+			RateLimitInterval:  DefaultRateLimitInterval,
+			RateLimitBurstSize: DefaultRateLimitBurstSize,
 		},
 	}
 }
@@ -95,6 +149,17 @@ func NewClientBasicAuth(email, password string) *http.Client {
 		Transport: &Transport{
 			Email:    email,
 			Password: password,
+		},
+	}
+}
+
+func NewClientBasicAuthWithRateLimit(email, password string) *http.Client {
+	return &http.Client{
+		Transport: &Transport{
+			Email:              email,
+			Password:           password,
+			RateLimitInterval:  DefaultRateLimitInterval,
+			RateLimitBurstSize: DefaultRateLimitBurstSize,
 		},
 	}
 }
