@@ -49,6 +49,7 @@ Usage:
 Available Commands:
   create      Create Lighthouse resources
   delete      Delete Lighthouse resources
+  export      Export Lighthouse account data
   get         Get Lighthouse resources
   list        List Lighthouse resources
   update      Update Lighthouse resources
@@ -61,6 +62,8 @@ Flags:
   -h, --help              help for lh
       --password string   Lighthouse password (cannot be used with --token)
   -p, --project string    Lighthouse project ID or name
+  -b, --rate-limit-burst-size int      Burst size used to rate limit API requests (must be used with --rate-limit-interval) (default 1)
+  -r, --rate-limit-interval duration   Interval used to rate limit API requests (use 0 to disable rate limiting) (default 1s)
   -t, --token string      Lighthouse API token
 
 Use "lh [command] --help" for more information about a command.
@@ -127,6 +130,34 @@ Global Flags:
   -t, --token string      Lighthouse API token
 
 Use "lh delete [command] --help" for more information about a command.
+```
+
+Use `lh export` to export Lighthouse account data:
+
+``` no-highlight
+Export Lighthouse account data
+
+Export will be written to the current directory with filename
+ACCOUNT_YYYY-MM-DD.tar.gz.  If export fails due to issuing too many
+API requests, consider using -r and -b to rate limit API requests.
+
+Usage:
+  lh export [flags]
+
+Flags:
+      --attachments   Include attachments in export
+  -h, --help          help for export
+
+Global Flags:
+  -a, --account string                 Lighthouse account name
+      --config string                  config file (default is $HOME/.lh.yaml)
+      --email string                   Lighthouse email (cannot be used with --token)
+  -M, --monochrome                     Monochrome (don't colorize JSON)
+      --password string                Lighthouse password (cannot be used with --token)
+  -p, --project string                 Lighthouse project ID or name
+  -b, --rate-limit-burst-size int      Burst size used to rate limit API requests (must be used with --rate-limit-interval) (default 1)
+  -r, --rate-limit-interval duration   Interval used to rate limit API requests (use 0 to disable rate limiting) (default 1s)
+  -t, --token string                   Lighthouse API token
 ```
 
 Use `lh get` to retrieve a specific Lighthouse resource:

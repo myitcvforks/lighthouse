@@ -22,7 +22,7 @@ const (
 
 	// DefaultRateLimitInterval controls the default rate limit
 	// interval
-	DefaultRateLimitInterval = 100 * time.Millisecond
+	DefaultRateLimitInterval = 1 * time.Second
 
 	// DefaultRateLimitBurstSize control the default rate Limit
 	// burst size
@@ -181,11 +181,11 @@ func NewService(account string, client *http.Client) *Service {
 }
 
 type Plan struct {
-	Plan     string `xml:"plan"`
-	Free     bool   `xml:"free"`
-	Users    int    `xml:"users"`
-	Projects int    `xml:"projects"`
-	Storage  int    `xml:"storage"`
+	Plan     string `xml:"plan" json:"plan"`
+	Free     bool   `xml:"free" json:"free"`
+	Users    int    `xml:"users" json:"users"`
+	Projects int    `xml:"projects" json:"projects"`
+	Storage  int    `xml:"storage" json:"storage"`
 }
 
 type planResponse struct {

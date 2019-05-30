@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/nwidger/jsoncolor"
 	"github.com/nwidger/lighthouse"
@@ -56,14 +57,20 @@ be overridden with --config.
 
 `,
 	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		account, token, email, password := viper.GetString("account"), viper.GetString("token"),
-			viper.GetString("email"), viper.GetString("password")
+		account, token, email, password, interval, burstSize := viper.GetString("account"), viper.GetString("token"),
+			viper.GetString("email"), viper.GetString("password"),
+			viper.GetDuration("rate-limit-interval"), viper.GetInt("rate-limit-burst-size")
 		if len(account) == 0 {
 			FatalUsage(cmd, "Please specify Lighthouse account name via -a, --account, LH_ACCOUNT or config file")
 		}
-		var client *http.Client
+		lt := &lighthouse.Transport{
+			TokenAsBasicAuth: true,
+		}
+		client := &http.Client{
+			Transport: lt,
+		}
 		if len(token) > 0 {
-			client = lighthouse.NewClient(token)
+			lt.Token = token
 		} else if len(email) > 0 && len(password) > 0 {
 			pw := password
 			if strings.HasPrefix(password, "@") && len(password) > 1 {
@@ -73,9 +80,14 @@ be overridden with --config.
 				}
 				pw = strings.TrimSpace(string(buf))
 			}
-			client = lighthouse.NewClientBasicAuth(email, pw)
+			lt.Email = email
+			lt.Password = pw
 		} else {
 			FatalUsage(cmd, "Please specify token or email & password")
+		}
+		if interval != time.Duration(0) {
+			lt.RateLimitInterval = interval
+			lt.RateLimitBurstSize = burstSize
 		}
 		service = lighthouse.NewService(account, client)
 	},
@@ -99,12 +111,16 @@ func init() {
 	RootCmd.PersistentFlags().String("password", "", "Lighthouse password (cannot be used with --token)")
 	RootCmd.PersistentFlags().StringP("project", "p", "", "Lighthouse project ID or name")
 	RootCmd.PersistentFlags().BoolP("monochrome", "M", false, "Monochrome (don't colorize JSON)")
+	RootCmd.PersistentFlags().DurationP("rate-limit-interval", "r", lighthouse.DefaultRateLimitInterval, "Interval used to rate limit API requests (use 0 to disable rate limiting)")
+	RootCmd.PersistentFlags().IntP("rate-limit-burst-size", "b", lighthouse.DefaultRateLimitBurstSize, "Burst size used to rate limit API requests (must be used with --rate-limit-interval)")
 	viper.BindPFlag("account", RootCmd.PersistentFlags().Lookup("account"))
 	viper.BindPFlag("token", RootCmd.PersistentFlags().Lookup("token"))
 	viper.BindPFlag("email", RootCmd.PersistentFlags().Lookup("email"))
 	viper.BindPFlag("password", RootCmd.PersistentFlags().Lookup("password"))
 	viper.BindPFlag("project", RootCmd.PersistentFlags().Lookup("project"))
 	viper.BindPFlag("monochrome", RootCmd.PersistentFlags().Lookup("monochrome"))
+	viper.BindPFlag("rate-limit-interval", RootCmd.PersistentFlags().Lookup("rate-limit-interval"))
+	viper.BindPFlag("rate-limit-burst-size", RootCmd.PersistentFlags().Lookup("rate-limit-burst-size"))
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -134,6 +150,14 @@ func JSON(v interface{}) {
 		log.Fatal(err)
 	}
 	fmt.Println(string(buf))
+}
+
+func Account() string {
+	account := viper.GetString("account")
+	if len(account) == 0 {
+		log.Fatal("Please specify account name via -a, --account, LH_ACCOUNT or config file")
+	}
+	return account
 }
 
 func Project() int {
