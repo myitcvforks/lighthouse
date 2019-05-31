@@ -21,11 +21,12 @@ import (
 	"github.com/nwidger/lighthouse/profiles"
 	"github.com/nwidger/lighthouse/projects"
 	"github.com/nwidger/lighthouse/tickets"
+	"github.com/nwidger/lighthouse/users"
 	"github.com/spf13/cobra"
 )
 
 type exportCmdOpts struct {
-	attachments bool
+	noAttachments bool
 }
 
 var exportCmdFlags exportCmdOpts
@@ -49,7 +50,6 @@ API requests, consider using -r and -b to rate limit API requests.
 		base := filepath.Join(".", account)
 
 		exportFilename := fmt.Sprintf(`%s_%s.tar.gz`, account, time.Now().Format(`2006-01-02`))
-		fmt.Println("writing export file to", exportFilename)
 
 		f, err := os.Create(exportFilename)
 		if err != nil {
@@ -68,6 +68,10 @@ API requests, consider using -r and -b to rate limit API requests.
 			FatalUsage(cmd, v...)
 		}
 
+		// no way to list users, so instead we'll build up a
+		// map of all user ID's we see and then fetch those
+		usersMap := map[int]bool{}
+
 		writeDir(cmd, tw, base)
 
 		// account plan (only works if you are the account
@@ -81,6 +85,7 @@ API requests, consider using -r and -b to rate limit API requests.
 		pp := profiles.NewService(service)
 		up, err := pp.Get()
 		if err == nil {
+			usersMap[up.ID] = true
 			writeJSONFile(cmd, tw, filepath.Join(base, "profile.json"), up)
 		}
 
@@ -102,6 +107,9 @@ API requests, consider using -r and -b to rate limit API requests.
 			if err != nil {
 				fatalUsage(cmd, err)
 			}
+			for _, membership := range memberships {
+				usersMap[membership.UserID] = true
+			}
 			writeJSONFile(cmd, tw, filepath.Join(projectBase, "memberships.json"), memberships)
 
 			// project bins
@@ -113,7 +121,8 @@ API requests, consider using -r and -b to rate limit API requests.
 			}
 			writeDir(cmd, tw, binsBase)
 			for _, bin := range bs {
-				writeJSONFile(cmd, tw, filepath.Join(binsBase, filename(fmt.Sprintf("%d-%s.json", bin.ID, bin.Name))), bin)
+				usersMap[bin.UserID] = true
+				writeJSONFile(cmd, tw, filepath.Join(binsBase, filename(fmt.Sprintf("%d-%s", bin.ID, bin.Name))+".json"), bin)
 			}
 
 			// project changesets
@@ -125,7 +134,8 @@ API requests, consider using -r and -b to rate limit API requests.
 			}
 			writeDir(cmd, tw, changesetsBase)
 			for _, changeset := range cs {
-				writeJSONFile(cmd, tw, filepath.Join(changesetsBase, filename(fmt.Sprintf("%s.json", changeset.Revision))), changeset)
+				usersMap[changeset.UserID] = true
+				writeJSONFile(cmd, tw, filepath.Join(changesetsBase, filename(fmt.Sprintf("%s", changeset.Revision))+".json"), changeset)
 			}
 
 			// project messages
@@ -137,7 +147,8 @@ API requests, consider using -r and -b to rate limit API requests.
 			}
 			writeDir(cmd, tw, messagesBase)
 			for _, message := range mgs {
-				writeJSONFile(cmd, tw, filepath.Join(messagesBase, filename(fmt.Sprintf("%d-%s.json", message.ID, message.Permalink))), message)
+				usersMap[message.UserID] = true
+				writeJSONFile(cmd, tw, filepath.Join(messagesBase, filename(fmt.Sprintf("%d-%s", message.ID, message.Permalink))+".json"), message)
 			}
 
 			// project milestones
@@ -149,7 +160,7 @@ API requests, consider using -r and -b to rate limit API requests.
 			}
 			writeDir(cmd, tw, milestonesBase)
 			for _, milestone := range ms {
-				writeJSONFile(cmd, tw, filepath.Join(milestonesBase, filename(fmt.Sprintf("%d-%s.json", milestone.ID, milestone.Permalink))), milestone)
+				writeJSONFile(cmd, tw, filepath.Join(milestonesBase, filename(fmt.Sprintf("%d-%s", milestone.ID, milestone.Permalink))+".json"), milestone)
 			}
 
 			// project tickets
@@ -168,10 +179,21 @@ API requests, consider using -r and -b to rate limit API requests.
 					break
 				}
 				for _, ticket := range ts {
+					// full ticket metadata only
+					// returned by fetching ticket
+					// directly
+					ticket, err := t.GetByNumber(ticket.Number)
+					if err != nil {
+						fatalUsage(cmd, err)
+					}
+
+					usersMap[ticket.UserID] = true
+
 					ticketBase := filepath.Join(ticketsBase, filename(fmt.Sprintf("%d-%s", ticket.Number, ticket.Permalink)))
+					writeDir(cmd, tw, ticketBase)
 					writeJSONFile(cmd, tw, filepath.Join(ticketBase, "ticket.json"), ticket)
 
-					if !flags.attachments {
+					if flags.noAttachments {
 						continue
 					}
 
@@ -188,6 +210,27 @@ API requests, consider using -r and -b to rate limit API requests.
 						writeFile(cmd, tw, filepath.Join(ticketBase, attachment.Attachment.Filename), buf)
 					}
 				}
+			}
+		}
+
+		// account users (fetching some users or memberships
+		// may result in a 401, don't consider this an error
+		// if it fails)
+		usersBase := filepath.Join(base, "users")
+		u := users.NewService(service)
+		writeDir(cmd, tw, usersBase)
+		for id := range usersMap {
+			user, err := u.GetByID(id)
+			if err != nil {
+				continue
+			}
+			userBase := filepath.Join(usersBase, filename(fmt.Sprintf("%d-%s", user.ID, user.Name)))
+			writeDir(cmd, tw, userBase)
+			writeJSONFile(cmd, tw, filepath.Join(userBase, "user.json"), user)
+
+			memberships, err := u.MembershipsByID(id)
+			if err == nil {
+				writeJSONFile(cmd, tw, filepath.Join(userBase, "memberships.json"), memberships)
 			}
 		}
 	},
@@ -257,5 +300,5 @@ func writeFile(cmd *cobra.Command, tw *tar.Writer, filename string, data []byte)
 
 func init() {
 	RootCmd.AddCommand(exportCmd)
-	exportCmd.Flags().BoolVar(&exportCmdFlags.attachments, "attachments", false, "Include attachments in export")
+	exportCmd.Flags().BoolVar(&exportCmdFlags.noAttachments, "no-attachments", false, "Don't include attachments in export")
 }

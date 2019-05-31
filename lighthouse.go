@@ -3,6 +3,7 @@
 package lighthouse
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -12,6 +13,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -22,11 +24,14 @@ const (
 
 	// DefaultRateLimitInterval controls the default rate limit
 	// interval
-	DefaultRateLimitInterval = 1 * time.Second
+	DefaultRateLimitInterval = 600 * time.Millisecond
 
 	// DefaultRateLimitBurstSize control the default rate Limit
 	// burst size
 	DefaultRateLimitBurstSize = 1
+
+	defaultRetryAttempts = 3
+	defaultRetryAfter    = 120 * time.Second
 )
 
 // Transport wraps another http.RoundTripper and ensures the outgoing
@@ -82,18 +87,23 @@ func (t *Transport) base() http.RoundTripper {
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req2 := cloneRequest(req) // per http.RoundTripper contract
 
-	if len(t.Token) > 0 {
-		if t.TokenAsBasicAuth {
-			req2.SetBasicAuth(t.Token, "x")
-		} else if t.TokenAsParameter {
-			values := req2.URL.Query()
-			values.Set("_token", t.Token)
-			req2.URL.RawQuery = values.Encode()
-		} else {
-			req2.Header.Set("X-LighthouseToken", t.Token)
+	// don't add Lighthouse credentials to request if we're not
+	// talking to Lighthouse (for example, if we get redirected to
+	// an S3 URL when downloading a ticket attachment)
+	if strings.HasSuffix(req.URL.Hostname(), ".lighthouseapp.com") {
+		if len(t.Token) > 0 {
+			if t.TokenAsBasicAuth {
+				req2.SetBasicAuth(t.Token, "x")
+			} else if t.TokenAsParameter {
+				values := req2.URL.Query()
+				values.Set("_token", t.Token)
+				req2.URL.RawQuery = values.Encode()
+			} else {
+				req2.Header.Set("X-LighthouseToken", t.Token)
+			}
+		} else if len(t.Email) > 0 && len(t.Password) > 0 {
+			req2.SetBasicAuth(t.Email, t.Password)
 		}
-	} else if len(t.Email) > 0 && len(t.Password) > 0 {
-		req2.SetBasicAuth(t.Email, t.Password)
 	}
 
 	rateLimiter := t.rateLimiter()
@@ -223,23 +233,56 @@ func (s *Service) Plan() (*Plan, error) {
 }
 
 func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, path, body)
-	if err != nil {
-		return nil, err
-	}
+	var (
+		buf  []byte
+		err  error
+		resp *http.Response
+	)
 
-	if len(req.Header.Get("Content-Type")) == 0 {
-		switch filepath.Ext(req.URL.Path) {
-		case ".json":
-			req.Header.Set("Content-Type", "application/json")
-		case ".xml":
-			req.Header.Set("Content-Type", "application/xml")
+	if body != nil {
+		buf, err = ioutil.ReadAll(body)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	resp, err := s.Client.Do(req)
-	if err != nil {
-		return nil, err
+	for attempt := 1; attempt <= defaultRetryAttempts; attempt++ {
+		if len(buf) > 0 {
+			body = bytes.NewReader(buf)
+		}
+
+		req, err := http.NewRequest(method, path, body)
+		if err != nil {
+			return nil, err
+		}
+
+		if len(req.Header.Get("Content-Type")) == 0 {
+			switch filepath.Ext(req.URL.Path) {
+			case ".json":
+				req.Header.Set("Content-Type", "application/json")
+			case ".xml":
+				req.Header.Set("Content-Type", "application/xml")
+			}
+		}
+
+		resp, err = s.Client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+
+		if resp.StatusCode != http.StatusTooManyRequests {
+			break
+		}
+
+		retryAfter := defaultRetryAfter
+		if str := resp.Header.Get("X-Rate-Limit-Retry-After"); len(str) > 0 {
+			n, err := strconv.Atoi(str)
+			if err == nil {
+				retryAfter = time.Duration(n) * time.Second
+			}
+		}
+
+		<-time.After(retryAfter)
 	}
 
 	return resp, nil
