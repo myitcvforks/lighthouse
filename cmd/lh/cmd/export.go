@@ -285,6 +285,7 @@ func writeJSONFile(cmd *cobra.Command, tw *tar.Writer, filename string, v interf
 	if err != nil {
 		FatalUsage(cmd, err)
 	}
+	data = append(data, '\n')
 	writeFile(cmd, tw, filename, data)
 }
 
@@ -295,6 +296,7 @@ func writeDir(cmd *cobra.Command, tw *tar.Writer, dirname string) {
 		Mode:     0755,
 		Uid:      1000,
 		Gid:      1000,
+		ModTime:  time.Now(),
 	}
 	err := tw.WriteHeader(hdr)
 	if err != nil {
@@ -311,6 +313,7 @@ func writeFile(cmd *cobra.Command, tw *tar.Writer, filename string, data []byte)
 		Mode:     0644,
 		Uid:      1000,
 		Gid:      1000,
+		ModTime:  time.Now(),
 	}
 	err := tw.WriteHeader(hdr)
 	if err != nil {
