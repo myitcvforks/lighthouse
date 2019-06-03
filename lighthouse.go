@@ -30,8 +30,8 @@ const (
 	// burst size
 	DefaultRateLimitBurstSize = 1
 
-	defaultRetryAttempts = 3
-	defaultRetryAfter    = 125 * time.Second
+	DefaultRateLimitRetryAttempts = 3
+	DefaultRateLimitMaxRetryAfter = 125 * time.Second
 )
 
 // Transport wraps another http.RoundTripper and ensures the outgoing
@@ -177,6 +177,31 @@ func NewClientBasicAuthWithRateLimit(email, password string) *http.Client {
 type Service struct {
 	BasePath string
 	Client   *http.Client
+
+	// RateLimitRetryRequests controls whether *Service.RoundTrip
+	// will automatically retry rate-limited requests that receive
+	// a 429 Too Many Requests response.
+	RateLimitRetryRequests bool
+	// RateLimitRetryAttempts controls how many attempts
+	// *Service.RoundTrip will make for a rate-limited request
+	// before giving up.  If RateLimitRetryRequests is set and
+	// RateLimitRetryAttempts is zero, the value of
+	// DefaultRateLimitRetryAttempts is used.
+	// RateLimitRetryAttempts is ignored if RateLimitRetryRequests
+	// is not set.
+	RateLimitRetryAttempts int
+	// RateLimitMaxRetryAfter controls the maximum time
+	// *Service.RoundTrip will wait between each retry attempt.
+	// *Service.RoundTrip uses the number of seconds returned in
+	// the X-Rate-Limit-Retry-After header of the 429 Too Many
+	// Requests response as the amount of time to wait between
+	// each attempt, using RateLimitMaxRetryAfter as an upper
+	// bound on this value.  If RateLimitRetryRequests is set and
+	// RateLimitMaxRetryAfter is zero, the value of
+	// DefaultRateLimitMaxRetryAfter is used.
+	// RateLimitMaxRetryAfter is ignored if RateLimitRetryRequests
+	// is not set.
+	RateLimitMaxRetryAfter time.Duration
 }
 
 func BasePath(account string) string {
@@ -246,7 +271,20 @@ func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response
 		}
 	}
 
-	for attempt := 1; attempt <= defaultRetryAttempts; attempt++ {
+	attempts := 1
+	maxRetryAfter := time.Duration(0)
+	if s.RateLimitRetryRequests {
+		attempts = s.RateLimitRetryAttempts
+		if attempts == 0 {
+			attempts = DefaultRateLimitRetryAttempts
+		}
+		maxRetryAfter = s.RateLimitMaxRetryAfter
+		if maxRetryAfter == time.Duration(0) {
+			maxRetryAfter = DefaultRateLimitMaxRetryAfter
+		}
+	}
+
+	for attempt := 1; attempt <= attempts; attempt++ {
 		if len(buf) > 0 {
 			body = bytes.NewReader(buf)
 		}
@@ -270,19 +308,24 @@ func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response
 			return nil, err
 		}
 
-		if resp.StatusCode != http.StatusTooManyRequests {
+		if !s.RateLimitRetryRequests ||
+			resp.StatusCode != http.StatusTooManyRequests {
 			break
 		}
 
-		retryAfter := defaultRetryAfter
+		retryAfter := maxRetryAfter
 		if str := resp.Header.Get("X-Rate-Limit-Retry-After"); len(str) > 0 {
 			n, err := strconv.Atoi(str)
 			if err == nil && n > 0 {
-				retryAfter = time.Duration(n+5) * time.Second
+				retryAfter = time.Duration(n) * time.Second
+				if retryAfter > maxRetryAfter {
+					retryAfter = maxRetryAfter
+				}
 			}
 		}
-
-		<-time.After(retryAfter)
+		if retryAfter != time.Duration(0) {
+			<-time.After(retryAfter + (5 * time.Second))
+		}
 	}
 
 	return resp, nil

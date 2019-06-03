@@ -90,6 +90,7 @@ be overridden with --config.
 			lt.RateLimitBurstSize = burstSize
 		}
 		service = lighthouse.NewService(account, client)
+		service.RateLimitRetryRequests = true
 	},
 }
 
