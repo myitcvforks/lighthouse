@@ -197,11 +197,14 @@ API requests, consider using -r and -b to rate limit API requests.
 						continue
 					}
 
-					// ticket attachments
+					// ticket attachments (some of
+					// these might fail with a
+					// 404, don't consider this an
+					// error)
 					for _, attachment := range ticket.Attachments {
 						rc, err := t.GetAttachment(attachment.Attachment)
 						if err != nil {
-							fatalUsage(cmd, err)
+							continue
 						}
 						buf, err := ioutil.ReadAll(rc)
 						if err != nil {

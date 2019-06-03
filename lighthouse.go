@@ -31,7 +31,7 @@ const (
 	DefaultRateLimitBurstSize = 1
 
 	defaultRetryAttempts = 3
-	defaultRetryAfter    = 120 * time.Second
+	defaultRetryAfter    = 125 * time.Second
 )
 
 // Transport wraps another http.RoundTripper and ensures the outgoing
@@ -277,8 +277,8 @@ func (s *Service) RoundTrip(method, path string, body io.Reader) (*http.Response
 		retryAfter := defaultRetryAfter
 		if str := resp.Header.Get("X-Rate-Limit-Retry-After"); len(str) > 0 {
 			n, err := strconv.Atoi(str)
-			if err == nil {
-				retryAfter = time.Duration(n) * time.Second
+			if err == nil && n > 0 {
+				retryAfter = time.Duration(n+5) * time.Second
 			}
 		}
 
