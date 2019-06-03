@@ -100,6 +100,7 @@ API requests, consider using -r and -b to rate limit API requests.
 			writeDir(cmd, tw, projectBase)
 
 			// project metadata
+			usersMap[project.DefaultAssignedUserID] = true
 			writeJSONFile(cmd, tw, filepath.Join(projectBase, "project.json"), project)
 
 			// project memberships
@@ -187,7 +188,23 @@ API requests, consider using -r and -b to rate limit API requests.
 						fatalUsage(cmd, err)
 					}
 
+					usersMap[ticket.AssignedUserID] = true
+					usersMap[ticket.CreatorID] = true
 					usersMap[ticket.UserID] = true
+					for _, watcherID := range ticket.WatchersIDs {
+						usersMap[watcherID] = true
+					}
+					for _, version := range ticket.Versions {
+						usersMap[version.AssignedUserID] = true
+						usersMap[version.CreatorID] = true
+						usersMap[version.UserID] = true
+						if version.DiffableAttributes != nil {
+							usersMap[version.DiffableAttributes.AssignedUser] = true
+						}
+						for _, watcherID := range version.WatchersIDs {
+							usersMap[watcherID] = true
+						}
+					}
 
 					ticketBase := filepath.Join(ticketsBase, filename(fmt.Sprintf("%d-%s", ticket.Number, ticket.Permalink)))
 					writeDir(cmd, tw, ticketBase)
@@ -202,6 +219,7 @@ API requests, consider using -r and -b to rate limit API requests.
 					// 404, don't consider this an
 					// error)
 					for _, attachment := range ticket.Attachments {
+						usersMap[attachment.Attachment.UploaderID] = true
 						rc, err := t.GetAttachment(attachment.Attachment)
 						if err != nil {
 							continue
@@ -223,6 +241,9 @@ API requests, consider using -r and -b to rate limit API requests.
 		u := users.NewService(service)
 		writeDir(cmd, tw, usersBase)
 		for id := range usersMap {
+			if id <= 0 {
+				continue
+			}
 			user, err := u.GetByID(id)
 			if err != nil {
 				continue
