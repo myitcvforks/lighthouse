@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -132,8 +133,27 @@ func (csr *changesetsResponse) changesets() Changesets {
 	return cs
 }
 
-func (s *Service) List() (Changesets, error) {
-	resp, err := s.s.RoundTrip("GET", s.basePath+".json", nil)
+type ListOptions struct {
+	// Undocumented.  If non-zero, the page to return.
+	Page int
+}
+
+func (s *Service) List(opts *ListOptions) (Changesets, error) {
+	path := s.basePath + ".json"
+	if opts != nil {
+		u, err := url.Parse(path)
+		if err != nil {
+			return nil, err
+		}
+		values := &url.Values{}
+		if opts.Page > 0 {
+			values.Set("page", strconv.Itoa(opts.Page))
+		}
+		u.RawQuery = values.Encode()
+		path = u.String()
+	}
+
+	resp, err := s.s.RoundTrip("GET", path, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -151,6 +171,31 @@ func (s *Service) List() (Changesets, error) {
 	}
 
 	return csresp.changesets(), nil
+}
+
+// ListAll repeatedly calls List and returns all pages.  ListAll
+// ignores opts.Page.
+func (s *Service) ListAll(opts *ListOptions) (Changesets, error) {
+	realOpts := ListOptions{}
+	if opts != nil {
+		realOpts = *opts
+	}
+
+	cs := Changesets{}
+
+	for realOpts.Page = 1; ; realOpts.Page++ {
+		p, err := s.List(&realOpts)
+		if err != nil {
+			return nil, err
+		}
+		if len(p) == 0 {
+			break
+		}
+
+		cs = append(cs, p...)
+	}
+
+	return cs, nil
 }
 
 func (s *Service) New() (*Changeset, error) {

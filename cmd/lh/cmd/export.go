@@ -127,16 +127,22 @@ API requests, consider using -r and -b to rate limit API requests.
 			}
 
 			// project changesets
-			changesetsBase := filepath.Join(projectBase, "changesets")
 			c := changesets.NewService(service, project.ID)
-			cs, err := c.List()
-			if err != nil {
-				fatalUsage(cmd, err)
-			}
+			changesetOpts := &changesets.ListOptions{}
+			changesetsBase := filepath.Join(projectBase, "changesets")
 			writeDir(cmd, tw, changesetsBase)
-			for _, changeset := range cs {
-				usersMap[changeset.UserID] = true
-				writeJSONFile(cmd, tw, filepath.Join(changesetsBase, filename(fmt.Sprintf("%s", changeset.Revision))+".json"), changeset)
+			for changesetOpts.Page = 1; ; changesetOpts.Page++ {
+				cs, err := c.List(changesetOpts)
+				if err != nil {
+					fatalUsage(cmd, err)
+				}
+				if len(cs) == 0 {
+					break
+				}
+				for _, changeset := range cs {
+					usersMap[changeset.UserID] = true
+					writeJSONFile(cmd, tw, filepath.Join(changesetsBase, filename(fmt.Sprintf("%s", changeset.Revision))+".json"), changeset)
+				}
 			}
 
 			// project messages
@@ -166,13 +172,13 @@ API requests, consider using -r and -b to rate limit API requests.
 
 			// project tickets
 			t := tickets.NewService(service, project.ID)
-			opts := &tickets.ListOptions{
+			ticketOpts := &tickets.ListOptions{
 				Limit: tickets.MaxLimit,
 			}
 			ticketsBase := filepath.Join(projectBase, "tickets")
 			writeDir(cmd, tw, ticketsBase)
-			for opts.Page = 1; ; opts.Page++ {
-				ts, err := t.List(opts)
+			for ticketOpts.Page = 1; ; ticketOpts.Page++ {
+				ts, err := t.List(ticketOpts)
 				if err != nil {
 					fatalUsage(cmd, err)
 				}
