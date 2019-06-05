@@ -39,7 +39,10 @@ func (c *Change) MarshalJSON() ([]byte, error) {
 		operation, path = c.Operation, c.Path
 	}
 
-	arr := []string{operation, path}
+	arr := []string{operation}
+	if len(path) > 0 {
+		arr = append(arr, path)
+	}
 	return json.Marshal(&arr)
 }
 
