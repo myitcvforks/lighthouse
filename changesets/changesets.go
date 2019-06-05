@@ -61,11 +61,21 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	if len(arr) != 2 {
-		return fmt.Errorf("Change.UnmarshalJSON: length is %d, expected 2", len(arr))
+	// if a changeset is extremely long, Lighthouse appears to
+	// truncate the list of changes which can result in it
+	// returning a 1-element change array containing only the
+	// operation [<op>] rather than the normal 2-element change
+	// array [<op>, <path>] containing both the operation and
+	// path.  We'll support both, with a 1-element change array
+	// resulting in a Change with an empty path.
+	if len(arr) < 1 || len(arr) > 2 {
+		return fmt.Errorf("Change.UnmarshalJSON: length is %d, expected 1 or 2", len(arr))
 	}
 
-	c.Operation, c.Path = arr[0], arr[1]
+	c.Operation = arr[0]
+	if len(arr) == 2 {
+		c.Path = arr[1]
+	}
 
 	return nil
 }
