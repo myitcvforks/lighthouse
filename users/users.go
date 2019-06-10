@@ -134,6 +134,7 @@ type User struct {
 	Job           string        `json:"job"`
 	Name          string        `json:"name"`
 	Website       string        `json:"website"`
+	AvatarURL     string        `json:"avatar_url,omitempty"`
 	ActiveTickets ActiveTickets `json:"active_tickets"`
 }
 
@@ -254,6 +255,22 @@ func (s *Service) Update(u *User) error {
 	}
 
 	return nil
+}
+
+func (s *Service) GetAvatar(u *User) (io.ReadCloser, string, error) {
+	resp, err := s.s.RoundTrip("GET", u.AvatarURL, nil)
+	if err != nil {
+		return nil, "", err
+	}
+
+	err = lighthouse.CheckResponse(resp, http.StatusOK)
+	if err != nil {
+		return nil, "", err
+	}
+
+	ctype := resp.Header.Get("Content-Type")
+
+	return resp.Body, ctype, nil
 }
 
 func (s *Service) Memberships(idOrName string) (Memberships, error) {

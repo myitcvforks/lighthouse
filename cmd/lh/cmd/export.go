@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"mime"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -262,6 +263,34 @@ API requests, consider using -r and -b to rate limit API requests.
 			if err == nil {
 				writeJSONFile(cmd, tw, filepath.Join(userBase, "memberships.json"), memberships)
 			}
+
+			if len(user.AvatarURL) == 0 {
+				continue
+			}
+
+			rc, ctype, err := u.GetAvatar(user)
+			if err != nil {
+				continue
+			}
+			buf, err := ioutil.ReadAll(rc)
+			if err != nil {
+				fatalUsage(cmd, err)
+			}
+			ext := ".jpg"
+			mediatype, _, err := mime.ParseMediaType(ctype)
+			if err == nil {
+				switch mediatype {
+				case "image/bmp":
+					ext = ".bmp"
+				case "image/gif":
+					ext = ".gif"
+				case "image/jpeg":
+					ext = ".jpg"
+				case "image/png":
+					ext = ".png"
+				}
+			}
+			writeFile(cmd, tw, filepath.Join(userBase, fmt.Sprintf("avatar%s", ext)), buf)
 		}
 	},
 }
