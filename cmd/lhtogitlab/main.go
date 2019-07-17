@@ -21,9 +21,6 @@ import (
 
 	"github.com/mholt/archiver"
 	"github.com/nwidger/lighthouse"
-	"github.com/nwidger/lighthouse/bins"
-	"github.com/nwidger/lighthouse/changesets"
-	"github.com/nwidger/lighthouse/messages"
 	"github.com/nwidger/lighthouse/milestones"
 	"github.com/nwidger/lighthouse/profiles"
 	"github.com/nwidger/lighthouse/projects"
@@ -105,10 +102,24 @@ func main() {
 
 	export = flag.Arg(0)
 
-	exp, err := readLHExport(export)
+	exp, tempDir, err := readLHExport(export)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer os.RemoveAll(tempDir)
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	defer signal.Reset(os.Interrupt)
+
+	go func(c chan os.Signal) {
+		<-c
+		signal.Reset(os.Interrupt)
+		if len(tempDir) > 0 {
+			os.RemoveAll(tempDir)
+		}
+		os.Exit(1)
+	}(c)
 
 	var client *http.Client
 	if insecure {
@@ -348,12 +359,11 @@ func main() {
 						!lhAttachment.CreatedAt.Equal(*lhVersion.CreatedAt) {
 						continue
 					}
-					dir, file, options, ok := lhAttachmentToUploadFile(lhAttachment)
+					file, options, ok := lhAttachmentToUploadFile(lhAttachment)
 					if !ok {
 						continue
 					}
 					pf, _, err := git.Projects.UploadFile(p.ID, file, options...)
-					os.RemoveAll(dir)
 					if err != nil {
 						fmt.Fprintln(os.Stderr, "unable to upload file", file, "for issue", i.IID, "in project", lhProject.Name, err)
 						continue
@@ -534,11 +544,19 @@ func lhProjectStatesToCreateLabels(text string) ([]*gitlab.CreateLabelOptions, b
 					color = "#" + c
 				}
 			case "description":
-				if len(m[i]) > 0 {
-					description = strings.TrimSpace(m[i])
+				d := strings.TrimSpace(m[i])
+				// ignore the default "help" descriptions
+				if len(d) > 0 &&
+					d != "You can add comments here" &&
+					d != "if you want to." &&
+					d != "You can customize colors" &&
+					d != "with 3 or 6 character hex codes" &&
+					d != "'A30' expands to 'AA3300'" {
+					description = d
 				}
 			}
 		}
+		// color is mandatory, so pick a default
 		if len(color) == 0 {
 			color = "#428BCA"
 		}
@@ -730,26 +748,9 @@ func lhTicketVersionToCreateIssueNote(lhVersion *tickets.TicketVersion, currentV
 	return opt, options, true
 }
 
-func lhAttachmentToUploadFile(lhAttachment *lhAttachment) (dir, file string, options []gitlab.OptionFunc, ok bool) {
-	var err error
-	options = withSudoByUserID(lhAttachment.UploaderID)
-	dir, err = ioutil.TempDir("", "lhtogitlab-ticket-attachment")
-	if err != nil {
-		return "", "", nil, false
-	}
-	defer func() {
-		if !ok && len(dir) > 0 {
-			os.RemoveAll(dir)
-		}
-	}()
-	file = filepath.Join(dir, lhAttachment.Filename)
-	f, err := os.Create(file)
-	if err != nil {
-		return "", "", nil, false
-	}
-	defer f.Close()
-	io.Copy(f, lhAttachment.r)
-	return dir, file, options, true
+func lhAttachmentToUploadFile(lhAttachment *lhAttachment) (string, []gitlab.OptionFunc, bool) {
+	options := withSudoByUserID(lhAttachment.UploaderID)
+	return lhAttachment.filename, options, true
 }
 
 func lhTicketToLabels(lhTicket *lhTicket) gitlab.Labels {
@@ -818,43 +819,23 @@ type lhExport struct {
 }
 
 type lhProjects struct {
-	byID map[int]*lhProject
 	list []*lhProject
 }
 
 type lhProject struct {
 	*projects.Project
 
-	bins        lhBins
-	changesets  lhChangesets
 	memberships projects.Memberships
-	messages    messages.Messages
 	milestones  lhMilestones
 	tickets     lhTickets
 }
 
-type lhBins struct {
-	byID map[int]*bins.Bin
-	list []*bins.Bin
-}
-
-type lhChangesets struct {
-	byRevision map[string]*changesets.Changeset
-	list       []*changesets.Changeset
-}
-
-type lhChangeset struct {
-	*changesets.Changeset
-}
-
 type lhMilestones struct {
-	byID map[int]*milestones.Milestone
 	list []*milestones.Milestone
 }
 
 type lhTickets struct {
-	byNumber map[int]*lhTicket
-	list     []*lhTicket
+	list []*lhTicket
 }
 
 type lhTicket struct {
@@ -864,7 +845,6 @@ type lhTicket struct {
 }
 
 type lhUsers struct {
-	byID map[int]*lhUser
 	list []*lhUser
 }
 
@@ -876,14 +856,13 @@ type lhUser struct {
 }
 
 type lhAttachments struct {
-	byFilename map[string]*lhAttachment
-	list       []*lhAttachment
+	list []*lhAttachment
 }
 
 type lhAttachment struct {
 	*tickets.Attachment
 
-	r io.Reader
+	filename string
 }
 
 type lhFile struct {
@@ -891,12 +870,11 @@ type lhFile struct {
 	r        io.Reader
 }
 
-func readLHExport(path string) (*lhExport, error) {
-	tempDir, err := ioutil.TempDir("", "lhtogitlab")
+func readLHExport(path string) (e *lhExport, tempDir string, err error) {
+	tempDir, err = ioutil.TempDir("", "lhtogitlab")
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
-	defer os.RemoveAll(tempDir)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -904,18 +882,23 @@ func readLHExport(path string) (*lhExport, error) {
 
 	go func(c chan os.Signal) {
 		<-c
+		signal.Reset(os.Interrupt)
 		if len(tempDir) > 0 {
 			os.RemoveAll(tempDir)
 		}
 	}(c)
 
-	e := &lhExport{
+	defer func() {
+		if err != nil && len(tempDir) > 0 {
+			os.RemoveAll(tempDir)
+		}
+	}()
+
+	e = &lhExport{
 		projects: &lhProjects{
-			byID: map[int]*lhProject{},
 			list: []*lhProject{},
 		},
 		users: &lhUsers{
-			byID: map[int]*lhUser{},
 			list: []*lhUser{},
 		},
 	}
@@ -925,18 +908,18 @@ func readLHExport(path string) (*lhExport, error) {
 
 	err = tgz.Unarchive(path, tempDir)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	userDirs, err := filepath.Glob(filepath.Join(tempDir, "*", "users", "*"))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	for _, dir := range userDirs {
 		uf, err := os.Open(filepath.Join(dir, "user.json"))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		defer uf.Close()
 		dec := json.NewDecoder(uf)
@@ -946,7 +929,7 @@ func readLHExport(path string) (*lhExport, error) {
 		}
 		err = dec.Decode(u.User)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		uf.Close()
 		mf, err := os.Open(filepath.Join(dir, "memberships.json"))
@@ -955,13 +938,13 @@ func readLHExport(path string) (*lhExport, error) {
 			dec = json.NewDecoder(mf)
 			err = dec.Decode(&u.memberships)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			mf.Close()
 		}
 		avatarPaths, err := filepath.Glob(filepath.Join(dir, "avatar.*"))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		if len(avatarPaths) != 0 {
 			u.avatar = &lhFile{
@@ -969,51 +952,39 @@ func readLHExport(path string) (*lhExport, error) {
 			}
 			buf, err := ioutil.ReadFile(avatarPaths[0])
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			u.avatar.r = bytes.NewReader(buf)
 		}
-		e.users.byID[u.ID] = u
 		e.users.list = append(e.users.list, u)
 	}
 	sort.Slice(e.users.list, func(i, j int) bool { return e.users.list[i].ID < e.users.list[j].ID })
 
 	projectDirs, err := filepath.Glob(filepath.Join(tempDir, "*", "projects", "*"))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	for _, dir := range projectDirs {
 		pf, err := os.Open(filepath.Join(dir, "project.json"))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		defer pf.Close()
 		dec := json.NewDecoder(pf)
 		p := &lhProject{
-			Project: &projects.Project{},
-			bins: lhBins{
-				byID: map[int]*bins.Bin{},
-				list: []*bins.Bin{},
-			},
-			changesets: lhChangesets{
-				byRevision: map[string]*changesets.Changeset{},
-				list:       []*changesets.Changeset{},
-			},
+			Project:     &projects.Project{},
 			memberships: projects.Memberships{},
-			messages:    messages.Messages{},
 			milestones: lhMilestones{
-				byID: map[int]*milestones.Milestone{},
 				list: []*milestones.Milestone{},
 			},
 			tickets: lhTickets{
-				byNumber: map[int]*lhTicket{},
-				list:     []*lhTicket{},
+				list: []*lhTicket{},
 			},
 		}
 		err = dec.Decode(p.Project)
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		pf.Close()
 		mf, err := os.Open(filepath.Join(dir, "memberships.json"))
@@ -1023,7 +994,7 @@ func readLHExport(path string) (*lhExport, error) {
 			dec = json.NewDecoder(mf)
 			err = dec.Decode(&memberships)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			mf.Close()
 			var unique projects.Memberships
@@ -1038,120 +1009,47 @@ func readLHExport(path string) (*lhExport, error) {
 			p.memberships = unique
 		}
 
-		binPaths, err := filepath.Glob(filepath.Join(dir, "bins", "*.json"))
-		if err != nil {
-			return nil, err
-		}
-		for _, binPath := range binPaths {
-			bf, err := os.Open(binPath)
-			if err != nil {
-				return nil, err
-			}
-			defer bf.Close()
-			dec = json.NewDecoder(bf)
-			b := &bins.Bin{}
-			err = dec.Decode(b)
-			if err != nil {
-				return nil, err
-			}
-			bf.Close()
-			p.bins.byID[b.ID] = b
-			p.bins.list = append(p.bins.list, b)
-		}
-		sort.Slice(p.bins.list, func(i, j int) bool { return p.bins.list[i].ID < p.bins.list[j].ID })
-
-		changesetPaths, err := filepath.Glob(filepath.Join(dir, "changesets", "*.json"))
-		if err != nil {
-			return nil, err
-		}
-		for _, changesetPath := range changesetPaths {
-			cf, err := os.Open(changesetPath)
-			if err != nil {
-				return nil, err
-			}
-			defer cf.Close()
-			dec = json.NewDecoder(cf)
-			c := &changesets.Changeset{}
-			err = dec.Decode(c)
-			if err != nil {
-				return nil, err
-			}
-			cf.Close()
-			p.changesets.byRevision[strings.ToLower(c.Revision)] = c
-			p.changesets.list = append(p.changesets.list, c)
-		}
-		sort.Slice(p.changesets.list, func(i, j int) bool {
-			if p.changesets.list[i].ChangedAt != nil &&
-				p.changesets.list[j].ChangedAt != nil {
-				return p.changesets.list[i].ChangedAt.Before(*p.changesets.list[j].ChangedAt)
-			}
-			return p.changesets.list[i].Revision < p.changesets.list[j].Revision
-		})
-
-		messagePaths, err := filepath.Glob(filepath.Join(dir, "messages", "*.json"))
-		if err != nil {
-			return nil, err
-		}
-		for _, messagePath := range messagePaths {
-			mf, err := os.Open(messagePath)
-			if err != nil {
-				return nil, err
-			}
-			defer mf.Close()
-			dec = json.NewDecoder(mf)
-			m := &messages.Message{}
-			err = dec.Decode(m)
-			if err != nil {
-				return nil, err
-			}
-			mf.Close()
-			p.messages = append(p.messages, m)
-		}
-		sort.Slice(p.messages, func(i, j int) bool { return p.messages[i].ID < p.messages[j].ID })
-
 		milestonePaths, err := filepath.Glob(filepath.Join(dir, "milestones", "*.json"))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		for _, milestonePath := range milestonePaths {
 			mf, err := os.Open(milestonePath)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			defer mf.Close()
 			dec = json.NewDecoder(mf)
 			m := &milestones.Milestone{}
 			err = dec.Decode(m)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			mf.Close()
-			p.milestones.byID[m.ID] = m
 			p.milestones.list = append(p.milestones.list, m)
 		}
 		sort.Slice(p.milestones.list, func(i, j int) bool { return p.milestones.list[i].ID < p.milestones.list[j].ID })
 
 		ticketDirs, err := filepath.Glob(filepath.Join(dir, "tickets", "*"))
 		if err != nil {
-			return nil, err
+			return nil, "", err
 		}
 		for _, ticketDir := range ticketDirs {
 			tf, err := os.Open(filepath.Join(ticketDir, "ticket.json"))
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			defer tf.Close()
 			dec := json.NewDecoder(tf)
 			t := &lhTicket{
 				Ticket: &tickets.Ticket{},
 				attachments: lhAttachments{
-					byFilename: map[string]*lhAttachment{},
-					list:       []*lhAttachment{},
+					list: []*lhAttachment{},
 				},
 			}
 			err = dec.Decode(t.Ticket)
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			tf.Close()
 			filenameMap := map[string]*tickets.Attachment{}
@@ -1160,15 +1058,11 @@ func readLHExport(path string) (*lhExport, error) {
 			}
 			attachmentPaths, err := filepath.Glob(filepath.Join(ticketDir, "*"))
 			if err != nil {
-				return nil, err
+				return nil, "", err
 			}
 			for _, attachmentPath := range attachmentPaths {
 				if filepath.Base(attachmentPath) == "ticket.json" {
 					continue
-				}
-				buf, err := ioutil.ReadFile(attachmentPath)
-				if err != nil {
-					return nil, err
 				}
 				a, ok := filenameMap[filepath.Base(attachmentPath)]
 				if !ok {
@@ -1176,20 +1070,17 @@ func readLHExport(path string) (*lhExport, error) {
 				}
 				attachment := &lhAttachment{
 					Attachment: a,
-					r:          bytes.NewReader(buf),
+					filename:   attachmentPath,
 				}
-				t.attachments.byFilename[attachment.Filename] = attachment
 				t.attachments.list = append(t.attachments.list, attachment)
 			}
-			p.tickets.byNumber[t.Number] = t
 			p.tickets.list = append(p.tickets.list, t)
 		}
 		sort.Slice(p.tickets.list, func(i, j int) bool { return p.tickets.list[i].Number < p.tickets.list[j].Number })
 
-		e.projects.byID[p.ID] = p
 		e.projects.list = append(e.projects.list, p)
 	}
 	sort.Slice(e.projects.list, func(i, j int) bool { return e.projects.list[i].ID < e.projects.list[j].ID })
 
-	return e, nil
+	return e, tempDir, nil
 }
