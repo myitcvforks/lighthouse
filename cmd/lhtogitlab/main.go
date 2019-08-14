@@ -51,6 +51,7 @@ func main() {
 	milestone := ""
 	number := 0
 	delete := false
+	stateKey := "lh"
 	insecure := false
 
 	flag.StringVar(&token, "token", token, "GitLab API token to use")
@@ -60,8 +61,9 @@ func main() {
 	flag.StringVar(&password, "password", password, "Password to use when creating GitLab users")
 	flag.StringVar(&project, "project", project, "Only migrate projects with the given name (useful for testing)")
 	flag.StringVar(&milestone, "milestone", milestone, "Only migrate milestones with the given title (useful for testing)")
+	flag.StringVar(&stateKey, "state-key", stateKey, "Scoped label key used to map Lighthouse ticket states to GitLab scoped labels")
 	flag.IntVar(&number, "number", number, "Only migrate tickets with the given number (useful for testing)")
-	flag.BoolVar(&delete, "delete", delete, "Delete all GitLab projects and users (except user owning API token -token) before importing")
+	flag.BoolVar(&delete, "delete", delete, "Do not import, delete all GitLab projects, groups and users (except root user and user owning API token -token) and then exit")
 	flag.BoolVar(&insecure, "insecure", insecure, "Allow insecure HTTPS connections to GitLab API")
 
 	flag.Parse()
@@ -92,6 +94,12 @@ func main() {
 
 	if len(password) == 0 {
 		fmt.Fprintf(os.Stderr, "Must specify password for creating GitLab users via -password\n\n")
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	if len(stateKey) == 0 {
+		fmt.Fprintf(os.Stderr, "Must specify scoped label key for mapping Lighthouse ticket states to GitLab scoped labels via -state-key\n\n")
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -142,30 +150,44 @@ func main() {
 	}
 
 	if delete {
+		gs, _, err := git.Groups.ListGroups(&gitlab.ListGroupsOptions{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, g := range gs {
+			fmt.Println("deleting group", g.Name)
+			_, err = git.Groups.DeleteGroup(g.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+		ps, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{})
+		if err != nil {
+			log.Fatal(err)
+		}
+		for _, p := range ps {
+			fmt.Println("deleting project", p.Name)
+			_, err = git.Projects.DeleteProject(p.ID)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 		us, _, err := git.Users.ListUsers(&gitlab.ListUsersOptions{})
 		if err != nil {
 			log.Fatal(err)
 		}
 		for _, u := range us {
-			if u.Username == me.Username {
+			if u.Username == "root" || u.Username == me.Username {
 				continue
 			}
+			fmt.Println("deleting user", u.Username)
 			git.Users.DeleteUser(u.ID)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 
-		ps, _, err := git.Projects.ListProjects(&gitlab.ListProjectsOptions{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		for _, p := range ps {
-			_, err = git.Projects.DeleteProject(p.ID)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
+		return
 	}
 
 	f, err := os.Open(usersPath)
@@ -274,7 +296,7 @@ func main() {
 		}
 		projectsMap[lhProject.ID] = p
 
-		labelOpts, options, ok := lhProjectToCreateLabels(lhProject)
+		labelOpts, options, ok := lhProjectToCreateLabels(lhProject, stateKey)
 		if ok {
 			for _, labelOpt := range labelOpts {
 				_, _, err = git.Labels.CreateLabel(p.ID, labelOpt, options...)
@@ -325,7 +347,7 @@ func main() {
 			if number > 0 && lhTicket.Number != number {
 				continue
 			}
-			issueOpt, options, ok := lhTicketToCreateIssue(lhTicket)
+			issueOpt, options, ok := lhTicketToCreateIssue(lhTicket, stateKey)
 			if !ok {
 				continue
 			}
@@ -346,7 +368,7 @@ func main() {
 			}
 
 			for _, lhVersion := range lhTicket.Versions {
-				issueOpt, options, ok := lhTicketVersionToUpdateIssue(lhVersion)
+				issueOpt, options, ok := lhTicketVersionToUpdateIssue(lhVersion, stateKey)
 				if ok {
 					_, _, err = git.Issues.UpdateIssue(p.ID, i.IID, issueOpt, options...)
 					if err != nil {
@@ -497,15 +519,15 @@ func lhProjectToCreateProject(lhProject *lhProject) (*gitlab.CreateProjectOption
 	return opt, options, true
 }
 
-func lhProjectToCreateLabels(lhProject *lhProject) ([]*gitlab.CreateLabelOptions, []gitlab.OptionFunc, bool) {
+func lhProjectToCreateLabels(lhProject *lhProject, stateKey string) ([]*gitlab.CreateLabelOptions, []gitlab.OptionFunc, bool) {
 	var opts []*gitlab.CreateLabelOptions
 	var options []gitlab.OptionFunc
-	openLabels, ok := lhProjectStatesToCreateLabels(lhProject.OpenStates)
+	openLabels, ok := lhProjectStatesToCreateLabels(lhProject.OpenStates, stateKey)
 	if !ok {
 		return nil, nil, false
 	}
 	opts = append(opts, openLabels...)
-	closedLabels, ok := lhProjectStatesToCreateLabels(lhProject.ClosedStates)
+	closedLabels, ok := lhProjectStatesToCreateLabels(lhProject.ClosedStates, stateKey)
 	if !ok {
 		return nil, nil, false
 	}
@@ -514,11 +536,10 @@ func lhProjectToCreateLabels(lhProject *lhProject) ([]*gitlab.CreateLabelOptions
 }
 
 var (
-	lhStateLabelPrefix      = "state:"
 	lhStateDefinitionRegexp = regexp.MustCompile(`^\s*(?P<name>[^/]+)/(?P<color>[0-9a-fA-F]+)\s*(#\s*(?P<description>.*)\s*)?$`)
 )
 
-func lhProjectStatesToCreateLabels(text string) ([]*gitlab.CreateLabelOptions, bool) {
+func lhProjectStatesToCreateLabels(text, stateKey string) ([]*gitlab.CreateLabelOptions, bool) {
 	var opts []*gitlab.CreateLabelOptions
 	for _, line := range strings.Split(text, "\n") {
 		var name, color, description string
@@ -532,7 +553,7 @@ func lhProjectStatesToCreateLabels(text string) ([]*gitlab.CreateLabelOptions, b
 		for i := range m {
 			switch names[i] {
 			case "name":
-				name = lhStateLabelPrefix + strings.TrimSpace(m[i])
+				name = stateKey + strings.TrimSpace(m[i])
 			case "color":
 				c := m[i]
 				if len(c) == 3 {
@@ -621,7 +642,7 @@ func lhMilestoneToUpdateMilestone(lhMilestone *milestones.Milestone) (*gitlab.Up
 	return opt, options, true
 }
 
-func lhTicketToCreateIssue(lhTicket *lhTicket) (*gitlab.CreateIssueOptions, []gitlab.OptionFunc, bool) {
+func lhTicketToCreateIssue(lhTicket *lhTicket, stateKey string) (*gitlab.CreateIssueOptions, []gitlab.OptionFunc, bool) {
 	options := withSudoByUserID(lhTicket.CreatorID)
 
 	var title *string
@@ -647,7 +668,7 @@ func lhTicketToCreateIssue(lhTicket *lhTicket) (*gitlab.CreateIssueOptions, []gi
 		}
 	}
 	var labels gitlab.Labels
-	labels = lhTicketToLabels(lhTicket)
+	labels = lhTicketToLabels(lhTicket, stateKey)
 	var createdAt *time.Time
 	if lhTicket.CreatedAt != nil {
 		createdAt = lhTicket.CreatedAt
@@ -655,7 +676,7 @@ func lhTicketToCreateIssue(lhTicket *lhTicket) (*gitlab.CreateIssueOptions, []gi
 
 	if len(lhTicket.Versions) > 0 {
 		lhVersion := lhTicket.Versions[0]
-		updateOpt, _, ok := lhTicketVersionToUpdateIssue(lhVersion)
+		updateOpt, _, ok := lhTicketVersionToUpdateIssue(lhVersion, stateKey)
 		if ok {
 			assigneeIDs = updateOpt.AssigneeIDs
 			milestoneID = updateOpt.MilestoneID
@@ -675,7 +696,7 @@ func lhTicketToCreateIssue(lhTicket *lhTicket) (*gitlab.CreateIssueOptions, []gi
 	return opt, options, true
 }
 
-func lhTicketVersionToUpdateIssue(lhVersion *tickets.TicketVersion) (*gitlab.UpdateIssueOptions, []gitlab.OptionFunc, bool) {
+func lhTicketVersionToUpdateIssue(lhVersion *tickets.TicketVersion, stateKey string) (*gitlab.UpdateIssueOptions, []gitlab.OptionFunc, bool) {
 	options := withSudoByUserID(lhVersion.UserID)
 	var title *string
 	title = gitlab.String(lhVersion.Title)
@@ -697,7 +718,7 @@ func lhTicketVersionToUpdateIssue(lhVersion *tickets.TicketVersion) (*gitlab.Upd
 			milestoneID = gitlab.Int(m.ID)
 		}
 	}
-	labels := lhTicketVersionToLabels(lhVersion)
+	labels := lhTicketVersionToLabels(lhVersion, stateKey)
 	var stateEvent *string
 	if lhVersion.Closed {
 		stateEvent = gitlab.String("close")
@@ -753,16 +774,16 @@ func lhAttachmentToUploadFile(lhAttachment *lhAttachment) (string, []gitlab.Opti
 	return lhAttachment.filename, options, true
 }
 
-func lhTicketToLabels(lhTicket *lhTicket) gitlab.Labels {
+func lhTicketToLabels(lhTicket *lhTicket, stateKey string) gitlab.Labels {
 	var labels gitlab.Labels
 	for _, tag := range lhTicket.Tags {
 		labels = append(labels, tag.Tag.Name)
 	}
-	labels = append(labels, lhStateLabelPrefix+lhTicket.State)
+	labels = append(labels, strings.Join([]string{stateKey, lhTicket.State}, "::"))
 	return labels
 }
 
-func lhTicketVersionToLabels(lhVersion *tickets.TicketVersion) gitlab.Labels {
+func lhTicketVersionToLabels(lhVersion *tickets.TicketVersion, stateKey string) gitlab.Labels {
 	var labels gitlab.Labels
 	r := strings.NewReader(lhVersion.Tag)
 	cr := csv.NewReader(r)
@@ -777,7 +798,7 @@ func lhTicketVersionToLabels(lhVersion *tickets.TicketVersion) gitlab.Labels {
 		}
 		labels = append(labels, r)
 	}
-	labels = append(labels, lhStateLabelPrefix+lhVersion.State)
+	labels = append(labels, strings.Join([]string{stateKey, lhVersion.State}, "::"))
 	return labels
 }
 
