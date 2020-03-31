@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime"
 	"os"
 	"path/filepath"
@@ -28,6 +29,7 @@ import (
 
 type exportCmdOpts struct {
 	noAttachments bool
+	only          []string
 }
 
 var exportCmdFlags exportCmdOpts
@@ -45,7 +47,15 @@ API requests, consider using -r and -b to rate limit API requests.
 `,
 	Run: func(cmd *cobra.Command, args []string) {
 		flags := exportCmdFlags
-		_ = flags
+
+		only := map[int]bool{}
+		for _, projectStr := range flags.only {
+			id, err := ProjectID(projectStr)
+			if err != nil {
+				log.Fatal(err)
+			}
+			only[id] = true
+		}
 
 		account := Account()
 		base := filepath.Join(".", account)
@@ -97,6 +107,11 @@ API requests, consider using -r and -b to rate limit API requests.
 			fatalUsage(cmd, err)
 		}
 		for _, project := range ps {
+			// skip if project not in --only
+			if len(only) > 0 && !only[project.ID] {
+				continue
+			}
+
 			projectBase := filepath.Join(base, "projects", filename(fmt.Sprintf("%d-%s", project.ID, project.Permalink)))
 			writeDir(cmd, tw, projectBase)
 
@@ -363,4 +378,5 @@ func writeFile(cmd *cobra.Command, tw *tar.Writer, filename string, data []byte)
 func init() {
 	RootCmd.AddCommand(exportCmd)
 	exportCmd.Flags().BoolVar(&exportCmdFlags.noAttachments, "no-attachments", false, "Don't include attachments in export")
+	exportCmd.Flags().StringSliceVar(&exportCmdFlags.only, "only", nil, "Only export data for the given comma-separated Lighthouse projects")
 }
