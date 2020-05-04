@@ -145,8 +145,9 @@ Usage:
   lh export [flags]
 
 Flags:
-      --attachments   Include attachments in export
-  -h, --help          help for export
+  -h, --help             help for export
+      --no-attachments   Don't include attachments in export
+      --only strings     Only export data for the given comma-separated Lighthouse projects
 
 Global Flags:
   -a, --account string                 Lighthouse account name
@@ -156,7 +157,7 @@ Global Flags:
       --password string                Lighthouse password (cannot be used with --token)
   -p, --project string                 Lighthouse project ID or name
   -b, --rate-limit-burst-size int      Burst size used to rate limit API requests (must be used with --rate-limit-interval) (default 1)
-  -r, --rate-limit-interval duration   Interval used to rate limit API requests (use 0 to disable rate limiting) (default 1s)
+  -r, --rate-limit-interval duration   Interval used to rate limit API requests (use 0 to disable rate limiting) (default 600ms)
   -t, --token string                   Lighthouse API token
 ```
 
